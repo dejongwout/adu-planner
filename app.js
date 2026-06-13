@@ -6,6 +6,7 @@ let clearancePolygon = null;
 let parcelLayer      = null;
 let rotMarker        = null;
 let aduState         = null; // { center: L.LatLng, widthM, heightM, rotation }
+let parcelFetchTimer = null;
 
 const CLEARANCE_M = 0.3048 * 4 * 2; // 4 ft each side → added to both width and height
 
@@ -202,12 +203,20 @@ function placeADU(latlng) {
       clearancePolygon.setLatLngs(calcCorners(c2, w2 + CLEARANCE_M, h2 + CLEARANCE_M, r2));
       rotMarker.setLatLng(handleLatLng(c2, h2, r2));
       aduImage?.setTransform(c2, r2);
+      // Debounce parcel refresh while dragging
+      clearTimeout(parcelFetchTimer);
+      parcelFetchTimer = setTimeout(() => {
+        fetchParcel(aduState.center.lat, aduState.center.lng);
+      }, 800);
     }
 
     function onUp() {
       map.off('mousemove', onMove);
       map.off('mouseup', onUp);
       map.dragging.enable();
+      // Always fetch the final drop position immediately
+      clearTimeout(parcelFetchTimer);
+      fetchParcel(aduState.center.lat, aduState.center.lng);
     }
 
     map.on('mousemove', onMove);
@@ -246,14 +255,15 @@ async function fetchParcel(lat, lng) {
 
   const BASE = 'https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CA_State_Parcels/FeatureServer/0/query';
   const params = new URLSearchParams({
-    geometry:       `${lng},${lat}`,
-    geometryType:   'esriGeometryPoint',
-    inSR:           '4326',
-    spatialRel:     'esriSpatialRelIntersects',
-    outFields:      'PARCEL_APN,SITE_CITY,SITE_ADDR,Shape__Area',
-    outSR:          '4326',
-    f:              'geojson',
-    resultRecordCount: '1',
+    geometry:            `${lng},${lat}`,
+    geometryType:        'esriGeometryPoint',
+    inSR:                '4326',
+    spatialRel:          'esriSpatialRelIntersects',
+    outFields:           'PARCEL_APN,SITE_CITY,SITE_ADDR,Shape__Area',
+    outSR:               '4326',
+    maxAllowableOffset:  '0',
+    f:                   'geojson',
+    resultRecordCount:   '1',
   });
 
   try {
