@@ -328,7 +328,7 @@ select:focus {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     border-right: none;
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
     order: 2;
   }
 
@@ -359,10 +359,10 @@ select:focus {
   .carousel-card {
     flex-shrink: 0;
     scroll-snap-align: start;
-    width: 110px;
+    width: 160px;
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
-    padding: 10px 12px;
+    overflow: hidden;
     background: var(--surface);
     cursor: pointer;
     transition: border-color .15s, background .15s;
@@ -371,8 +371,16 @@ select:focus {
     border-color: var(--accent);
     background: rgba(0,113,227,.04);
   }
-  .carousel-name { font-size: 0.8125rem; font-weight: 600; margin-bottom: 3px; }
+  .carousel-img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    display: block;
+  }
+  .carousel-info { padding: 9px 11px 11px; }
+  .carousel-name { font-size: 0.8125rem; font-weight: 600; margin-bottom: 2px; }
   .carousel-dims { font-size: 0.6875rem; color: var(--muted); }
+  .carousel-sqft { font-size: 0.6875rem; color: var(--muted); margin-top: 1px; }
 
   #addressSearch, select { height: 66px; font-size: 1rem; }
 

@@ -471,8 +471,12 @@ function buildModelSelect() {
     card.className  = 'carousel-card' + (i === 0 ? ' active' : '');
     card.dataset.id = m.id;
     card.innerHTML  =
-      `<div class="carousel-name">${m.name}</div>` +
-      `<div class="carousel-dims">${m.width} × ${m.depth} ft</div>`;
+      (m.imageUrl ? `<img src="${m.imageUrl}" class="carousel-img" alt="${m.name}">` : '') +
+      `<div class="carousel-info">` +
+        `<div class="carousel-name">${m.name}</div>` +
+        `<div class="carousel-dims">${m.width} × ${m.depth} ft</div>` +
+        (m.living ? `<div class="carousel-sqft">${m.living} sq ft living</div>` : '') +
+      `</div>`;
     card.addEventListener('click', () => selectModel(m.id));
     carousel.appendChild(card);
   });
