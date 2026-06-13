@@ -255,8 +255,16 @@ select:focus {
 .rot-handle {
   width: 44px;
   height: 44px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
   cursor: grab;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,.22));
+  user-select: none;
 }
 .rot-handle:active { cursor: grabbing; }
 

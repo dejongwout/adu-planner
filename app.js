@@ -113,14 +113,7 @@ const FloorplanLayer = L.Layer.extend({
 function makeRotIcon() {
   return L.divIcon({
     className: '',
-    html:
-      `<svg class="rot-handle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44">` +
-        `<circle cx="22" cy="22" r="20" fill="white"/>` +
-        `<path d="M17 13.3 A10 10 0 0 1 32 22" stroke="#1d1d1f" stroke-width="2.5" fill="none" stroke-linecap="round"/>` +
-        `<path d="M29 19 L32 22 L35 19" stroke="#1d1d1f" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` +
-        `<path d="M27 30.7 A10 10 0 0 1 12 22" stroke="#1d1d1f" stroke-width="2.5" fill="none" stroke-linecap="round"/>` +
-        `<path d="M9 25 L12 22 L15 25" stroke="#1d1d1f" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` +
-      `</svg>`,
+    html: `<div class="rot-handle">↺</div>`,
     iconSize:   [44, 44],
     iconAnchor: [22, 22],
   });
