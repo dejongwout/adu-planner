@@ -160,11 +160,11 @@ function placeADU(latlng) {
 
   // 4 ft clearance guideline
   clearancePolygon = L.polygon(calcCorners(center, widthM + CLEARANCE_M, heightM + CLEARANCE_M, rot), {
-    color:       '#ff9500',
+    color:       '#FFD60A',
     weight:      1.5,
     opacity:     0.85,
     dashArray:   '7 5',
-    fillColor:   '#ff9500',
+    fillColor:   '#FFD60A',
     fillOpacity: 0.07,
     interactive: false,
   }).addTo(map);
@@ -172,8 +172,8 @@ function placeADU(latlng) {
   // Outline polygon — filled (invisible fill) when image shown, filled blue otherwise
   aduPolygon = L.polygon(calcCorners(center, widthM, heightM, rot), {
     color:       '#0071e3',
-    weight:      2,
-    opacity:     1,
+    weight:      0,
+    opacity:     0,
     fillColor:   '#0071e3',
     fillOpacity: hasImg ? 0.01 : 0.28, // 0.01 = invisible but still hit-testable
     className:   'adu-poly',
@@ -380,7 +380,7 @@ function buildModelSelect() {
   map = L.map('map', {
     center: [38.1, -122.5],
     zoom:   11,
-    zoomControl: true,
+    zoomControl: false,
   });
 
   // Custom pane for floor plan image — sits below the vector overlay pane (z 400)
