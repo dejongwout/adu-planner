@@ -472,7 +472,7 @@ function selectModel(id) {
   );
   // Scroll mobile slider to the matching slide
   const slide = document.querySelector(`.slider-slide[data-id="${id}"]`);
-  if (slide) slide.parentElement.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
+  if (slide) slide.parentElement.scrollTo({ left: slide.offsetLeft - 18, behavior: 'smooth' });
   updateUnitCard();
   if (aduState) placeADU(aduState.center);
 }

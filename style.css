@@ -345,23 +345,29 @@ select:focus {
   .form-section > .label { display: none; }
   .unit-card            { display: none; }
 
-  .sidebar-body { padding: 14px 18px 18px; gap: 12px; }
+  /* Remove horizontal padding from body; restore per-section below */
+  .sidebar-body { padding: 14px 0 18px; gap: 12px; }
+  .sidebar-body > .form-section,
+  .sidebar-body > .lot-section,
+  .sidebar-body > .sidebar-footer { padding-left: 18px; padding-right: 18px; }
 
-  /* Full-info unit slider */
+  /* Full-info unit slider — edge to edge, first card left-aligned with address */
   .unit-slider {
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
+    scroll-padding-left: 18px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     gap: 10px;
+    padding-left: 18px;
   }
   .unit-slider::-webkit-scrollbar { display: none; }
 
   .slider-slide {
     flex-shrink: 0;
     scroll-snap-align: start;
-    width: calc(100% - 28px); /* 18px peek of next card */
+    width: calc(100vw - 48px); /* viewport - left-pad(18) - gap(10) - peek(20) */
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
