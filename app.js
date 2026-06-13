@@ -468,12 +468,19 @@ function buildModelSelect() {
     { maxZoom: 23, maxNativeZoom: 19 }
   ).addTo(map);
 
-  // Auto-detect location → fly there if user is in California
+  // Auto-detect location → fly there and populate address if user is in California
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((pos) => {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude: lat, longitude: lng } = pos.coords;
       const inCA = lat >= 32.5 && lat <= 42.0 && lng >= -124.5 && lng <= -114.1;
-      if (inCA) map.setView([lat, lng], 15);
+      if (!inCA) return;
+      map.setView([lat, lng], 16);
+      try {
+        const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+        const data = await res.json();
+        const addr = data?.display_name || '';
+        if (addr) document.getElementById('addressSearch').value = addr;
+      } catch { /* silent */ }
     });
   }
 
