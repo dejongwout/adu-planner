@@ -192,13 +192,13 @@ function removeADU() {
   document.getElementById('btnClear').hidden = true;
 }
 
-function placeADU(latlng) {
+function placeADU(latlng, rotation = 0) {
   removeADU();
 
   const model   = getModel();
   const widthM  = ft2m(model.width);
   const heightM = ft2m(model.depth);
-  const rot     = 0;
+  const rot     = rotation;
   const center  = L.latLng(latlng.lat, latlng.lng);
   const hasImg  = !!model.imageUrl;
 
@@ -465,6 +465,8 @@ function updateRentalDisplay() {
 }
 
 function selectModel(id) {
+  const savedCenter   = aduState?.center;
+  const savedRotation = aduState?.rotation ?? 0;
   document.getElementById('modelSelect').value = id;
   // Sync desktop carousel cards (hidden on mobile but keep in sync)
   document.querySelectorAll('.carousel-card').forEach(c =>
@@ -474,7 +476,7 @@ function selectModel(id) {
   const slide = document.querySelector(`.slider-slide[data-id="${id}"]`);
   if (slide) slide.parentElement.scrollTo({ left: slide.offsetLeft - 18, behavior: 'smooth' });
   updateUnitCard();
-  if (aduState) placeADU(aduState.center);
+  if (savedCenter) placeADU(savedCenter, savedRotation);
 }
 
 function buildModelSelect() {
@@ -514,24 +516,33 @@ function buildModelSelect() {
     slider.appendChild(slide);
   });
 
-  // Detect swipe → change model via IntersectionObserver
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.intersectionRatio >= 0.6) {
-        const id = entry.target.dataset.id;
-        document.querySelectorAll('.slider-slide').forEach(s =>
-          s.classList.toggle('active', s.dataset.id === id)
-        );
-        if (id !== sel.value) {
-          sel.value = id;
-          updateUnitCard();
-          if (aduState) placeADU(aduState.center);
-        }
+  // Detect swipe → change model via debounced scroll (reliable on iOS Safari)
+  let snapTimer;
+  slider.addEventListener('scroll', () => {
+    clearTimeout(snapTimer);
+    snapTimer = setTimeout(() => {
+      const firstSlide = slider.querySelector('.slider-slide');
+      if (!firstSlide) return;
+      const slideW = firstSlide.offsetWidth;
+      const gap    = 10;
+      const idx    = Math.min(
+        Math.round(slider.scrollLeft / (slideW + gap)),
+        ADU_MODELS.length - 1
+      );
+      const id = ADU_MODELS[idx]?.id;
+      if (!id) return;
+      slider.querySelectorAll('.slider-slide').forEach(s =>
+        s.classList.toggle('active', s.dataset.id === id)
+      );
+      if (id !== sel.value) {
+        const savedCenter   = aduState?.center;
+        const savedRotation = aduState?.rotation ?? 0;
+        sel.value = id;
+        updateUnitCard();
+        if (savedCenter) placeADU(savedCenter, savedRotation);
       }
-    });
-  }, { root: slider, threshold: 0.6 });
-
-  slider.querySelectorAll('.slider-slide').forEach(s => observer.observe(s));
+    }, 80);
+  }, { passive: true });
 
   sel.addEventListener('change', () => selectModel(sel.value));
   updateUnitCard();
