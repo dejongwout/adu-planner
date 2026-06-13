@@ -446,18 +446,38 @@ function updateRentalDisplay() {
   document.getElementById('rentalRow').hidden = false;
 }
 
+function selectModel(id) {
+  document.getElementById('modelSelect').value = id;
+  document.querySelectorAll('.carousel-card').forEach(c =>
+    c.classList.toggle('active', c.dataset.id === id)
+  );
+  updateUnitCard();
+  if (aduState) placeADU(aduState.center);
+}
+
 function buildModelSelect() {
-  const sel = document.getElementById('modelSelect');
-  ADU_MODELS.forEach(m => {
+  const sel      = document.getElementById('modelSelect');
+  const carousel = document.getElementById('unitCarousel');
+
+  ADU_MODELS.forEach((m, i) => {
+    // Desktop dropdown option
     const opt       = document.createElement('option');
     opt.value       = m.id;
     opt.textContent = `${m.name}  (${m.width} × ${m.depth} ft)`;
     sel.appendChild(opt);
+
+    // Mobile carousel card
+    const card = document.createElement('div');
+    card.className  = 'carousel-card' + (i === 0 ? ' active' : '');
+    card.dataset.id = m.id;
+    card.innerHTML  =
+      `<div class="carousel-name">${m.name}</div>` +
+      `<div class="carousel-dims">${m.width} × ${m.depth} ft</div>`;
+    card.addEventListener('click', () => selectModel(m.id));
+    carousel.appendChild(card);
   });
-  sel.addEventListener('change', () => {
-    updateUnitCard();
-    if (aduState) placeADU(aduState.center);
-  });
+
+  sel.addEventListener('change', () => selectModel(sel.value));
   updateUnitCard();
 }
 

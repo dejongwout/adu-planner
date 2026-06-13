@@ -314,6 +314,9 @@ select:focus {
 
 .toast.hidden { opacity: 0; }
 
+/* ── Carousel (mobile model picker) ────────────────────────────────────────── */
+.unit-carousel { display: none; }
+
 /* ── Mobile ─────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .app { flex-direction: column; }
@@ -334,11 +337,42 @@ select:focus {
     order: 1;
   }
 
-  .sidebar-header { padding: 16px 18px 12px; }
-  .sidebar-header h1 { font-size: 1.1rem; }
-  .sidebar-header p  { font-size: 0.75rem; }
+  /* Hide header and dropdown on mobile */
+  .sidebar-header { display: none; }
+  #modelSection   { display: none; }
 
   .sidebar-body { padding: 14px 18px 18px; gap: 12px; }
+
+  /* Swipeable model carousel */
+  .unit-carousel {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -18px;
+    padding: 2px 18px;
+  }
+  .unit-carousel::-webkit-scrollbar { display: none; }
+
+  .carousel-card {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    width: 110px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .carousel-card.active {
+    border-color: var(--accent);
+    background: rgba(0,113,227,.04);
+  }
+  .carousel-name { font-size: 0.8125rem; font-weight: 600; margin-bottom: 3px; }
+  .carousel-dims { font-size: 0.6875rem; color: var(--muted); }
 
   #addressSearch, select { height: 66px; font-size: 1rem; }
 
