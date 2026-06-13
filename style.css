@@ -321,8 +321,8 @@ select:focus {
 /* ── Mobile ─────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   /* Map fills the full screen; sidebar floats as a bottom sheet */
-  /* dvh accounts for the browser URL bar so nothing hides behind it */
-  .app { position: relative; height: 100vh; height: 100dvh; }
+  /* fixed + inset:0 pins corners to raw screen edges, behind Dynamic Island */
+  .app { position: fixed; inset: 0; height: auto; }
 
   .map-wrap { position: absolute; inset: 0; height: 100% !important; overflow: hidden; }
 
