@@ -317,6 +317,7 @@ select:focus {
 /* ── Carousel + slider (mobile only) ───────────────────────────────────────── */
 .unit-carousel { display: none; }
 .unit-slider   { display: none; }
+.slider-label  { display: none; }
 
 /* ── Mobile ─────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
@@ -358,9 +359,17 @@ select:focus {
   #lotSection            { display: none; }
   .sidebar-footer        { display: none; }
 
-  /* Sidebar body: no horizontal padding — restored on form-section only */
-  .sidebar-body { padding: 18px 0 32px; gap: 12px; }
+  /* Sidebar body: no horizontal padding — restored on individual sections */
+  .sidebar-body { padding: 18px 0 32px; gap: 10px; }
   .sidebar-body > .form-section { padding-left: 18px; padding-right: 18px; }
+
+  .slider-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted);
+    padding: 4px 18px 0;
+  }
 
   /* Full-info unit slider — edge to edge, first card left-aligned with address */
   .unit-slider {
@@ -378,7 +387,7 @@ select:focus {
   .slider-slide {
     flex-shrink: 0;
     scroll-snap-align: start;
-    width: calc(100vw - 48px);
+    width: calc(100vw - 120px); /* ~80px peek of the next card */
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
