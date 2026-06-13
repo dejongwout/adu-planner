@@ -320,36 +320,40 @@ select:focus {
 
 /* ── Mobile ─────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .app { flex-direction: column; }
+  /* Map fills the full screen; sidebar floats as a bottom sheet */
+  .app { position: relative; }
+
+  .map-wrap { position: absolute; inset: 0; height: 100% !important; }
 
   .sidebar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
     width: 100%;
-    height: auto;
-    max-height: 52vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    max-height: none;
+    overflow: visible;
     border-right: none;
-    border-bottom: none;
-    order: 2;
+    border-top: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -4px 24px rgba(0,0,0,.12);
+    background: var(--surface);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .map-wrap {
-    height: 48vh;
-    order: 1;
-  }
-
-  /* Hide header, address label, dropdown and old unit card on mobile */
-  .sidebar-header       { display: none; }
-  #modelSection         { display: none; }
-  #unitCarousel         { display: none; }
+  /* Hide everything except address + slider */
+  .sidebar-header        { display: none; }
+  #modelSection          { display: none; }
+  #unitCarousel          { display: none; }
   .form-section > .label { display: none; }
-  .unit-card            { display: none; }
+  .unit-card             { display: none; }
+  #lotSection            { display: none; }
+  .sidebar-footer        { display: none; }
 
-  /* Remove horizontal padding from body; restore per-section below */
-  .sidebar-body { padding: 14px 0 18px; gap: 12px; }
-  .sidebar-body > .form-section,
-  .sidebar-body > .lot-section,
-  .sidebar-body > .sidebar-footer { padding-left: 18px; padding-right: 18px; }
+  /* Sidebar body: no horizontal padding — restored on form-section only */
+  .sidebar-body { padding: 14px 0 20px; gap: 12px; }
+  .sidebar-body > .form-section { padding-left: 18px; padding-right: 18px; }
 
   /* Full-info unit slider — edge to edge, first card left-aligned with address */
   .unit-slider {
@@ -367,7 +371,7 @@ select:focus {
   .slider-slide {
     flex-shrink: 0;
     scroll-snap-align: start;
-    width: calc(100vw - 48px); /* viewport - left-pad(18) - gap(10) - peek(20) */
+    width: calc(100vw - 48px);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
@@ -397,11 +401,10 @@ select:focus {
   .slider-rental-val { font-size: 0.8125rem; font-weight: 500; color: var(--text); }
   .slider-rental-loc { font-size: 0.6875rem; color: var(--muted); }
 
-  #addressSearch, select { height: 66px; font-size: 1rem; }
+  #addressSearch { height: 66px; font-size: 1rem; }
 
   .unit-floorplan { max-height: 130px; object-fit: contain; }
 
-  .toast { bottom: 16px; font-size: 0.8125rem; padding: 8px 18px; }
-
-  .btn-clear { padding: 8px 16px; }
+  /* Toast sits above the bottom sheet */
+  .toast { bottom: 280px; font-size: 0.8125rem; padding: 8px 18px; }
 }
