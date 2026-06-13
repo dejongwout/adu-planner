@@ -159,6 +159,17 @@ select:focus {
 .unit-area { font-size: 0.8125rem; color: var(--muted); margin-bottom: 10px; }
 .unit-badges { display: flex; gap: 6px; }
 
+.rental-row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rental-label { font-size: 0.75rem; color: var(--muted); text-transform: lowercase; }
+.rental-val   { font-size: 1.125rem; font-weight: 700; color: #34c759; letter-spacing: -0.02em; }
+
 .badge {
   font-size: 0.75rem;
   font-weight: 500;

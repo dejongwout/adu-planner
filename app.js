@@ -351,6 +351,17 @@ function updateUnitCard() {
     : `${total.toLocaleString()} sq ft footprint`;
   document.getElementById('badgeW').textContent   = `W: ${m.width} ft`;
   document.getElementById('badgeD').textContent   = `D: ${m.depth} ft`;
+
+  // Rental estimate: $2.50–$3.50 / sq ft / month (CA market range)
+  if (m.living) {
+    const lo = Math.round(m.living * 2.50 / 50) * 50;
+    const hi = Math.round(m.living * 3.50 / 50) * 50;
+    document.getElementById('unitRental').textContent =
+      `$${lo.toLocaleString()} – $${hi.toLocaleString()} / mo`;
+    document.getElementById('rentalRow').hidden = false;
+  } else {
+    document.getElementById('rentalRow').hidden = true;
+  }
 }
 
 function buildModelSelect() {

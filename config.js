@@ -15,7 +15,7 @@ const ADU_MODELS = [
     living:   300,
     imageUrl: 'https://framerusercontent.com/images/AwLmr6xFst4p8ceSnR3JoGeP4Ng.webp',
   },
-  { id: '1bed-600',   name: '1 Bed 600',  width: 20, depth: 30 },
-  { id: '2bed-800',   name: '2 Bed 800',  width: 25, depth: 32 },
-  { id: '2bed-1000',  name: '2 Bed 1000', width: 28, depth: 36 },
+  { id: '1bed-600',   name: '1 Bed 600',  width: 20, depth: 30, living: 600  },
+  { id: '2bed-800',   name: '2 Bed 800',  width: 25, depth: 32, living: 800  },
+  { id: '2bed-1000',  name: '2 Bed 1000', width: 28, depth: 36, living: 1000 },
 ];
