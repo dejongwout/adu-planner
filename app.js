@@ -602,5 +602,15 @@ function buildModelSelect() {
 
   // Re-measure after layout settles (important on iOS where fixed elements
   // may resize after the initial paint behind the Dynamic Island)
-  requestAnimationFrame(() => requestAnimationFrame(() => map.invalidateSize()));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    map.invalidateSize();
+    syncSheetHeight();
+  }));
+
+  function syncSheetHeight() {
+    if (window.innerWidth > 768) return;
+    const h = document.querySelector('.sidebar')?.offsetHeight ?? 300;
+    document.documentElement.style.setProperty('--sheet-h', h + 'px');
+  }
+  window.addEventListener('resize', syncSheetHeight);
 })();

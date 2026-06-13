@@ -421,6 +421,6 @@ select:focus {
 
   .unit-floorplan { max-height: 130px; object-fit: contain; }
 
-  /* Toast: sits just above the bottom sheet */
-  .toast { top: auto; bottom: 280px; transform: translateX(-50%); font-size: 0.8125rem; padding: 8px 18px; }
+  /* Toast: always 16px above the bottom sheet (height set via JS --sheet-h) */
+  .toast { top: auto; bottom: calc(var(--sheet-h, 300px) + 16px); transform: translateX(-50%); font-size: 0.8125rem; padding: 8px 18px; }
 }
