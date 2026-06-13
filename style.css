@@ -340,6 +340,8 @@ select:focus {
 
   .sidebar-body { padding: 14px 18px 18px; gap: 12px; }
 
+  #addressSearch, select { height: 66px; font-size: 1rem; }
+
   .unit-floorplan { max-height: 130px; object-fit: contain; }
 
   .toast { bottom: 16px; font-size: 0.8125rem; padding: 8px 18px; }
