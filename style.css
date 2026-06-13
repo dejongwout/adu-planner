@@ -321,9 +321,10 @@ select:focus {
 /* ── Mobile ─────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   /* Map fills the full screen; sidebar floats as a bottom sheet */
-  .app { position: relative; }
+  /* dvh accounts for the browser URL bar so nothing hides behind it */
+  .app { position: relative; height: 100vh; height: 100dvh; }
 
-  .map-wrap { position: absolute; inset: 0; height: 100% !important; }
+  .map-wrap { position: absolute; inset: 0; height: 100% !important; overflow: hidden; }
 
   .sidebar {
     position: absolute;
@@ -352,7 +353,7 @@ select:focus {
   .sidebar-footer        { display: none; }
 
   /* Sidebar body: no horizontal padding — restored on form-section only */
-  .sidebar-body { padding: 14px 0 20px; gap: 12px; }
+  .sidebar-body { padding: 14px 0 32px; gap: 12px; }
   .sidebar-body > .form-section { padding-left: 18px; padding-right: 18px; }
 
   /* Full-info unit slider — edge to edge, first card left-aligned with address */
@@ -405,6 +406,6 @@ select:focus {
 
   .unit-floorplan { max-height: 130px; object-fit: contain; }
 
-  /* Toast sits above the bottom sheet */
-  .toast { bottom: 280px; font-size: 0.8125rem; padding: 8px 18px; }
+  /* Toast: centred in the visible map above the bottom sheet */
+  .toast { top: 40%; bottom: auto; transform: translate(-50%, -50%); font-size: 0.8125rem; padding: 8px 18px; }
 }
