@@ -497,7 +497,6 @@ function buildModelSelect() {
     const total      = m.width * m.depth;
     const areaText   = m.living ? `${m.living} sq ft living · ${total} sq ft total` : `${total} sq ft footprint`;
     slide.innerHTML  =
-      (m.imageUrl ? `<img src="${m.imageUrl}" class="slider-img" alt="${m.name}">` : '') +
       `<div class="slider-body">` +
         `<div class="slider-name">${m.name}</div>` +
         `<div class="slider-area">${areaText}</div>` +
@@ -600,4 +599,8 @@ function buildModelSelect() {
   buildModelSelect();
   initSearch();
   document.getElementById('btnClear').addEventListener('click', removeADU);
+
+  // Re-measure after layout settles (important on iOS where fixed elements
+  // may resize after the initial paint behind the Dynamic Island)
+  requestAnimationFrame(() => requestAnimationFrame(() => map.invalidateSize()));
 })();

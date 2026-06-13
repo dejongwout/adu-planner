@@ -321,13 +321,19 @@ select:focus {
 /* ── Mobile ─────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   /* Map fills the full screen; sidebar floats as a bottom sheet */
-  /* fixed + inset:0 pins corners to raw screen edges, behind Dynamic Island */
-  .app { position: fixed; inset: 0; height: auto; }
+  /* Both anchored directly to the viewport so they reach behind the Dynamic Island */
+  .app { position: static; overflow: visible; height: auto; }
 
-  .map-wrap { position: absolute; inset: 0; height: 100% !important; overflow: hidden; }
+  .map-wrap {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    height: auto !important;
+    z-index: 0;
+    overflow: hidden;
+  }
 
   .sidebar {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
