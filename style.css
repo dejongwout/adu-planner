@@ -313,3 +313,36 @@ select:focus {
 }
 
 .toast.hidden { opacity: 0; }
+
+/* ── Mobile ─────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .app { flex-direction: column; }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 52vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    order: 2;
+  }
+
+  .map-wrap {
+    height: 48vh;
+    order: 1;
+  }
+
+  .sidebar-header { padding: 16px 18px 12px; }
+  .sidebar-header h1 { font-size: 1.1rem; }
+  .sidebar-header p  { font-size: 0.75rem; }
+
+  .sidebar-body { padding: 14px 18px 18px; gap: 12px; }
+
+  .unit-floorplan { max-height: 130px; object-fit: contain; }
+
+  .toast { bottom: 16px; font-size: 0.8125rem; padding: 8px 18px; }
+
+  .btn-clear { padding: 8px 16px; }
+}

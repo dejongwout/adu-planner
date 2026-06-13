@@ -11,6 +11,16 @@ let currentRates     = { lo: 2.50, hi: 3.50, label: null }; // $/sq ft/month
 
 const CLEARANCE_M = 0.3048 * 4 * 2; // 4 ft each side → added to both width and height
 
+// Extract a Leaflet LatLng from either a Leaflet mouse event or a raw touch event.
+function eventLatLng(e) {
+  if (e.latlng) return e.latlng;
+  const orig  = e.originalEvent || e;
+  const touch = (orig.touches && orig.touches[0]) || (orig.changedTouches && orig.changedTouches[0]);
+  if (!touch) return null;
+  const rect = map.getContainer().getBoundingClientRect();
+  return map.containerPointToLatLng(L.point(touch.clientX - rect.left, touch.clientY - rect.top));
+}
+
 // ── California rental rates by county ($/sq ft/month) ────────────────────────
 // Source: Zillow Rent Index + Apartment List, 2024–2025
 const COUNTY_RATES = {
@@ -228,40 +238,51 @@ function placeADU(latlng) {
     zIndexOffset: 100,
   }).addTo(map);
 
-  // ── Drag polygon to move ──
-  aduPolygon.on('mousedown', (e) => {
+  // ── Drag polygon to move (mouse + touch) ──
+  aduPolygon.on('mousedown touchstart', (e) => {
     L.DomEvent.stopPropagation(e);
+    const orig = e.originalEvent || e;
+    if (orig.preventDefault) orig.preventDefault();
     map.dragging.disable();
-    let last = e.latlng;
 
-    function onMove(ev) {
-      const dlat = ev.latlng.lat - last.lat;
-      const dlng = ev.latlng.lng - last.lng;
-      last = ev.latlng;
+    let last = eventLatLng(e);
+    if (!last) { map.dragging.enable(); return; }
+
+    function move(latlng) {
+      const dlat = latlng.lat - last.lat;
+      const dlng = latlng.lng - last.lng;
+      last = latlng;
       aduState.center = L.latLng(aduState.center.lat + dlat, aduState.center.lng + dlng);
       const { center: c2, widthM: w2, heightM: h2, rotation: r2 } = aduState;
       aduPolygon.setLatLngs(calcCorners(c2, w2, h2, r2));
       clearancePolygon.setLatLngs(calcCorners(c2, w2 + CLEARANCE_M, h2 + CLEARANCE_M, r2));
       rotMarker.setLatLng(handleLatLng(c2, h2, r2));
       aduImage?.setTransform(c2, r2);
-      // Debounce parcel refresh while dragging
       clearTimeout(parcelFetchTimer);
-      parcelFetchTimer = setTimeout(() => {
-        fetchParcel(aduState.center.lat, aduState.center.lng);
-      }, 800);
+      parcelFetchTimer = setTimeout(() => fetchParcel(aduState.center.lat, aduState.center.lng), 800);
+    }
+
+    function onMouseMove(ev) { move(ev.latlng); }
+    function onTouchMove(ev) {
+      ev.preventDefault();
+      const ll = eventLatLng(ev);
+      if (ll) move(ll);
     }
 
     function onUp() {
-      map.off('mousemove', onMove);
+      map.off('mousemove', onMouseMove);
       map.off('mouseup', onUp);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onUp);
       map.dragging.enable();
-      // Always fetch the final drop position immediately
       clearTimeout(parcelFetchTimer);
       fetchParcel(aduState.center.lat, aduState.center.lng);
     }
 
-    map.on('mousemove', onMove);
+    map.on('mousemove', onMouseMove);
     map.on('mouseup', onUp);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onUp);
   });
 
   aduPolygon.on('click', L.DomEvent.stopPropagation);
