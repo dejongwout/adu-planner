@@ -421,6 +421,6 @@ select:focus {
 
   .unit-floorplan { max-height: 130px; object-fit: contain; }
 
-  /* Toast: centred in the visible map above the bottom sheet */
-  .toast { top: 40%; bottom: auto; transform: translate(-50%, -50%); font-size: 0.8125rem; padding: 8px 18px; }
+  /* Toast: sits just above the bottom sheet */
+  .toast { top: auto; bottom: 280px; transform: translateX(-50%); font-size: 0.8125rem; padding: 8px 18px; }
 }
