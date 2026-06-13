@@ -148,7 +148,8 @@ select:focus {
 
 /* ── Unit card ──────────────────────────────────────────────────── */
 .unit-card {
-  background: var(--bg);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius);
   padding: 16px 18px;
 }
