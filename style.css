@@ -176,8 +176,8 @@ select:focus {
   flex-direction: column;
   gap: 2px;
 }
-.rental-label    { font-size: 0.75rem; color: var(--muted); text-transform: lowercase; }
-.rental-val      { font-size: 1.125rem; font-weight: 700; color: #34c759; letter-spacing: -0.02em; }
+.rental-label    { font-size: 0.75rem; color: var(--muted); }
+.rental-val      { font-size: 0.875rem; font-weight: 500; color: var(--text); }
 .rental-location { font-size: 0.6875rem; color: var(--muted); margin-top: 1px; }
 
 .badge {
