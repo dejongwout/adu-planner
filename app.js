@@ -7,8 +7,56 @@ let parcelLayer      = null;
 let rotMarker        = null;
 let aduState         = null; // { center: L.LatLng, widthM, heightM, rotation }
 let parcelFetchTimer = null;
+let currentRates     = { lo: 2.50, hi: 3.50, label: null }; // $/sq ft/month
 
 const CLEARANCE_M = 0.3048 * 4 * 2; // 4 ft each side → added to both width and height
+
+// ── California rental rates by county ($/sq ft/month) ────────────────────────
+// Source: Zillow Rent Index + Apartment List, 2024–2025
+const COUNTY_RATES = {
+  // Bay Area — premium
+  'San Francisco County':   { lo: 4.50, hi: 5.50 },
+  'San Mateo County':       { lo: 4.00, hi: 4.80 },
+  'Marin County':           { lo: 4.00, hi: 5.00 },
+  'Santa Clara County':     { lo: 3.50, hi: 4.50 },
+  'Alameda County':         { lo: 3.00, hi: 4.00 },
+  'Napa County':            { lo: 2.80, hi: 3.60 },
+  'Contra Costa County':    { lo: 2.50, hi: 3.20 },
+  'Sonoma County':          { lo: 2.40, hi: 3.20 },
+  'Solano County':          { lo: 2.00, hi: 2.70 },
+  // Southern California
+  'Los Angeles County':     { lo: 3.00, hi: 4.00 },
+  'Orange County':          { lo: 2.80, hi: 3.80 },
+  'San Diego County':       { lo: 3.00, hi: 4.00 },
+  'Santa Barbara County':   { lo: 2.80, hi: 3.80 },
+  'Ventura County':         { lo: 2.40, hi: 3.20 },
+  'Riverside County':       { lo: 1.80, hi: 2.60 },
+  'San Bernardino County':  { lo: 1.60, hi: 2.20 },
+  // Coastal Central
+  'Santa Cruz County':      { lo: 3.00, hi: 4.00 },
+  'Monterey County':        { lo: 2.50, hi: 3.50 },
+  'San Luis Obispo County': { lo: 2.50, hi: 3.50 },
+  // Sacramento / Foothills
+  'Placer County':          { lo: 2.20, hi: 3.00 },
+  'El Dorado County':       { lo: 2.00, hi: 2.80 },
+  'Sacramento County':      { lo: 1.80, hi: 2.50 },
+  'Yolo County':            { lo: 2.00, hi: 2.80 },
+  'Nevada County':          { lo: 2.00, hi: 2.80 },
+  // Central Valley
+  'San Joaquin County':     { lo: 1.60, hi: 2.20 },
+  'Stanislaus County':      { lo: 1.50, hi: 2.10 },
+  'Fresno County':          { lo: 1.40, hi: 2.00 },
+  'Tulare County':          { lo: 1.20, hi: 1.70 },
+  'Kings County':           { lo: 1.20, hi: 1.60 },
+  'Kern County':            { lo: 1.30, hi: 1.80 },
+  'Merced County':          { lo: 1.30, hi: 1.80 },
+  // North Coast / Inland North
+  'Mendocino County':       { lo: 1.80, hi: 2.50 },
+  'Humboldt County':        { lo: 1.50, hi: 2.20 },
+  'Lake County':            { lo: 1.20, hi: 1.80 },
+  'Shasta County':          { lo: 1.40, hi: 2.00 },
+};
+const DEFAULT_RATES = { lo: 2.50, hi: 3.50 };
 
 // ── Geo math ──────────────────────────────────────────────────────────────────
 const FT_TO_M       = 0.3048;
@@ -241,13 +289,13 @@ function placeADU(latlng) {
   document.getElementById('btnClear').hidden = false;
 }
 
-// ── Parcel lookup (CA State Parcels — free, no key required) ──────────────────
+// ── Parcel lookup + rental rate (both run in parallel) ────────────────────────
 async function fetchParcel(lat, lng) {
   parcelLayer?.remove();
   parcelLayer = null;
 
-  const BASE = 'https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CA_State_Parcels/FeatureServer/0/query';
-  const params = new URLSearchParams({
+  const PARCEL_URL = 'https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CA_State_Parcels/FeatureServer/0/query';
+  const parcelParams = new URLSearchParams({
     geometry:            `${lng},${lat}`,
     geometryType:        'esriGeometryPoint',
     inSR:                '4326',
@@ -259,35 +307,40 @@ async function fetchParcel(lat, lng) {
     resultRecordCount:   '1',
   });
 
-  try {
-    const res     = await fetch(`${BASE}?${params}`);
-    if (!res.ok) return;
-    const data    = await res.json();
-    const feature = data?.features?.[0];
-    if (!feature) return;
+  const [parcelResult, geoResult] = await Promise.allSettled([
+    fetch(`${PARCEL_URL}?${parcelParams}`).then(r => r.json()),
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`).then(r => r.json()),
+  ]);
 
-    // Draw parcel boundary
-    const geom  = feature.geometry;
-    const rings = geom.type === 'MultiPolygon' ? geom.coordinates[0] : geom.coordinates;
-    parcelLayer = L.polygon(
-      rings.map(ring => ring.map(([lo, la]) => [la, lo])),
-      { color: '#FFD60A', weight: 2.5, opacity: 1, fillColor: '#FFD60A', fillOpacity: 0.1, interactive: false }
-    ).addTo(map);
-
-    // Populate sidebar
-    const p     = feature.properties || {};
-    const areaM2 = p.Shape__Area || 0;
-    const sqft  = areaM2 > 0 ? `${Math.round(areaM2 * 10.764).toLocaleString()} sq ft` : null;
-    const acres = areaM2 > 0 ? `${(areaM2 / 4047).toFixed(3)} ac` : null;
-    const addr  = [p.SITE_ADDR, p.SITE_CITY].filter(Boolean).join(', ') || '–';
-
-    document.getElementById('lotAddress').textContent = addr;
-    document.getElementById('lotArea').textContent    = [sqft, acres].filter(Boolean).join(' · ') || '–';
-    document.getElementById('lotAPN').textContent     = p.PARCEL_APN || '–';
-    document.getElementById('lotSection').hidden      = false;
-  } catch (err) {
-    console.warn('Parcel lookup failed:', err);
+  // Update rental rates from reverse geocode
+  if (geoResult.status === 'fulfilled') {
+    const county = geoResult.value?.address?.county || '';
+    currentRates = { ...(COUNTY_RATES[county] || DEFAULT_RATES), label: county.replace(' County', '') };
+    updateRentalDisplay();
   }
+
+  // Draw parcel boundary + sidebar
+  if (parcelResult.status !== 'fulfilled') return;
+  const feature = parcelResult.value?.features?.[0];
+  if (!feature) return;
+
+  const geom  = feature.geometry;
+  const rings = geom.type === 'MultiPolygon' ? geom.coordinates[0] : geom.coordinates;
+  parcelLayer = L.polygon(
+    rings.map(ring => ring.map(([lo, la]) => [la, lo])),
+    { color: '#FFD60A', weight: 2.5, opacity: 1, fillColor: '#FFD60A', fillOpacity: 0.1, interactive: false }
+  ).addTo(map);
+
+  const p      = feature.properties || {};
+  const areaM2 = p.Shape__Area || 0;
+  const sqft   = areaM2 > 0 ? `${Math.round(areaM2 * 10.764).toLocaleString()} sq ft` : null;
+  const acres  = areaM2 > 0 ? `${(areaM2 / 4047).toFixed(3)} ac` : null;
+  const addr   = [p.SITE_ADDR, p.SITE_CITY].filter(Boolean).join(', ') || '–';
+
+  document.getElementById('lotAddress').textContent = addr;
+  document.getElementById('lotArea').textContent    = [sqft, acres].filter(Boolean).join(' · ') || '–';
+  document.getElementById('lotAPN').textContent     = p.PARCEL_APN || '–';
+  document.getElementById('lotSection').hidden      = false;
 }
 
 // ── Address search (Nominatim) ────────────────────────────────────────────────
@@ -361,16 +414,17 @@ function updateUnitCard() {
   document.getElementById('badgeW').textContent   = `W: ${m.width} ft`;
   document.getElementById('badgeD').textContent   = `D: ${m.depth} ft`;
 
-  // Rental estimate: $2.50–$3.50 / sq ft / month (CA market range)
-  if (m.living) {
-    const lo = Math.round(m.living * 2.50 / 50) * 50;
-    const hi = Math.round(m.living * 3.50 / 50) * 50;
-    document.getElementById('unitRental').textContent =
-      `$${lo.toLocaleString()} – $${hi.toLocaleString()} / mo`;
-    document.getElementById('rentalRow').hidden = false;
-  } else {
-    document.getElementById('rentalRow').hidden = true;
-  }
+  updateRentalDisplay();
+}
+
+function updateRentalDisplay() {
+  const m = getModel();
+  if (!m.living) { document.getElementById('rentalRow').hidden = true; return; }
+  const lo = Math.round(m.living * currentRates.lo / 50) * 50;
+  const hi = Math.round(m.living * currentRates.hi / 50) * 50;
+  document.getElementById('unitRental').textContent  = `$${lo.toLocaleString()} – $${hi.toLocaleString()} / mo`;
+  document.getElementById('rentalLocation').textContent = currentRates.label ? `${currentRates.label} County market` : 'California avg';
+  document.getElementById('rentalRow').hidden = false;
 }
 
 function buildModelSelect() {
