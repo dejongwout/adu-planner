@@ -359,7 +359,7 @@ select:focus {
   .sidebar-footer        { display: none; }
 
   /* Sidebar body: no horizontal padding — restored on form-section only */
-  .sidebar-body { padding: 14px 0 32px; gap: 12px; }
+  .sidebar-body { padding: 18px 0 32px; gap: 12px; }
   .sidebar-body > .form-section { padding-left: 18px; padding-right: 18px; }
 
   /* Full-info unit slider — edge to edge, first card left-aligned with address */
