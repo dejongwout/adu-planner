@@ -314,8 +314,9 @@ select:focus {
 
 .toast.hidden { opacity: 0; }
 
-/* ── Carousel (mobile model picker) ────────────────────────────────────────── */
+/* ── Carousel + slider (mobile only) ───────────────────────────────────────── */
 .unit-carousel { display: none; }
+.unit-slider   { display: none; }
 
 /* ── Mobile ─────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
@@ -337,51 +338,60 @@ select:focus {
     order: 1;
   }
 
-  /* Hide header, address label and dropdown on mobile */
-  .sidebar-header { display: none; }
-  #modelSection   { display: none; }
+  /* Hide header, address label, dropdown and old unit card on mobile */
+  .sidebar-header       { display: none; }
+  #modelSection         { display: none; }
+  #unitCarousel         { display: none; }
   .form-section > .label { display: none; }
+  .unit-card            { display: none; }
 
   .sidebar-body { padding: 14px 18px 18px; gap: 12px; }
 
-  /* Swipeable model carousel */
-  .unit-carousel {
+  /* Full-info unit slider */
+  .unit-slider {
     display: flex;
-    gap: 8px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     margin: 0 -18px;
     padding: 2px 18px;
+    gap: 10px;
   }
-  .unit-carousel::-webkit-scrollbar { display: none; }
+  .unit-slider::-webkit-scrollbar { display: none; }
 
-  .carousel-card {
+  .slider-slide {
     flex-shrink: 0;
     scroll-snap-align: start;
-    width: 160px;
+    width: calc(100% - 36px);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--surface);
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
+    transition: border-color .15s;
   }
-  .carousel-card.active {
-    border-color: var(--accent);
-    background: rgba(0,113,227,.04);
-  }
-  .carousel-img {
+  .slider-slide.active { border-color: var(--accent); }
+
+  .slider-img {
     width: 100%;
-    height: 100px;
+    height: 120px;
     object-fit: cover;
     display: block;
   }
-  .carousel-info { padding: 9px 11px 11px; }
-  .carousel-name { font-size: 0.8125rem; font-weight: 600; margin-bottom: 2px; }
-  .carousel-dims { font-size: 0.6875rem; color: var(--muted); }
-  .carousel-sqft { font-size: 0.6875rem; color: var(--muted); margin-top: 1px; }
+
+  .slider-body  { padding: 11px 14px 13px; display: flex; flex-direction: column; gap: 6px; }
+  .slider-name  { font-size: 0.9375rem; font-weight: 600; }
+  .slider-area  { font-size: 0.8rem; color: var(--muted); }
+  .slider-badges { display: flex; gap: 6px; }
+  .slider-rental {
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .slider-rental-val { font-size: 0.875rem; font-weight: 500; color: var(--text); }
+  .slider-rental-loc { font-size: 0.6875rem; color: var(--muted); }
 
   #addressSearch, select { height: 66px; font-size: 1rem; }
 

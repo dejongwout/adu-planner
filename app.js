@@ -437,27 +437,49 @@ function updateUnitCard() {
 }
 
 function updateRentalDisplay() {
+  const locLabel = currentRates.label ? `${currentRates.label} County market` : 'California avg';
+
+  // Update desktop unit card
   const m = getModel();
-  if (!m.living) { document.getElementById('rentalRow').hidden = true; return; }
-  const lo = Math.round(m.living * currentRates.lo / 50) * 50;
-  const hi = Math.round(m.living * currentRates.hi / 50) * 50;
-  document.getElementById('unitRental').textContent  = `$${lo.toLocaleString()} – $${hi.toLocaleString()} / mo`;
-  document.getElementById('rentalLocation').textContent = currentRates.label ? `${currentRates.label} County market` : 'California avg';
-  document.getElementById('rentalRow').hidden = false;
+  if (m.living) {
+    const lo = Math.round(m.living * currentRates.lo / 50) * 50;
+    const hi = Math.round(m.living * currentRates.hi / 50) * 50;
+    document.getElementById('unitRental').textContent     = `$${lo.toLocaleString()} – $${hi.toLocaleString()} / mo`;
+    document.getElementById('rentalLocation').textContent = locLabel;
+    document.getElementById('rentalRow').hidden           = false;
+  } else {
+    document.getElementById('rentalRow').hidden = true;
+  }
+
+  // Update all mobile slider slides
+  ADU_MODELS.forEach(model => {
+    const slide = document.querySelector(`.slider-slide[data-id="${model.id}"]`);
+    if (!slide || !model.living) return;
+    const lo = Math.round(model.living * currentRates.lo / 50) * 50;
+    const hi = Math.round(model.living * currentRates.hi / 50) * 50;
+    const rv = slide.querySelector('.slider-rental-val');
+    const rl = slide.querySelector('.slider-rental-loc');
+    if (rv) rv.textContent = `$${lo.toLocaleString()} – $${hi.toLocaleString()} / mo`;
+    if (rl) rl.textContent = locLabel;
+  });
 }
 
 function selectModel(id) {
   document.getElementById('modelSelect').value = id;
+  // Sync desktop carousel cards (hidden on mobile but keep in sync)
   document.querySelectorAll('.carousel-card').forEach(c =>
     c.classList.toggle('active', c.dataset.id === id)
   );
+  // Scroll mobile slider to the matching slide
+  const slide = document.querySelector(`.slider-slide[data-id="${id}"]`);
+  if (slide) slide.parentElement.scrollTo({ left: slide.offsetLeft - 18, behavior: 'smooth' });
   updateUnitCard();
   if (aduState) placeADU(aduState.center);
 }
 
 function buildModelSelect() {
-  const sel      = document.getElementById('modelSelect');
-  const carousel = document.getElementById('unitCarousel');
+  const sel    = document.getElementById('modelSelect');
+  const slider = document.getElementById('unitSlider');
 
   ADU_MODELS.forEach((m, i) => {
     // Desktop dropdown option
@@ -466,20 +488,50 @@ function buildModelSelect() {
     opt.textContent = `${m.name}  (${m.width} × ${m.depth} ft)`;
     sel.appendChild(opt);
 
-    // Mobile carousel card
-    const card = document.createElement('div');
-    card.className  = 'carousel-card' + (i === 0 ? ' active' : '');
-    card.dataset.id = m.id;
-    card.innerHTML  =
-      (m.imageUrl ? `<img src="${m.imageUrl}" class="carousel-img" alt="${m.name}">` : '') +
-      `<div class="carousel-info">` +
-        `<div class="carousel-name">${m.name}</div>` +
-        `<div class="carousel-dims">${m.width} × ${m.depth} ft</div>` +
-        (m.living ? `<div class="carousel-sqft">${m.living} sq ft living</div>` : '') +
+    // Mobile full-info slide
+    const slide = document.createElement('div');
+    slide.className  = 'slider-slide' + (i === 0 ? ' active' : '');
+    slide.dataset.id = m.id;
+    const total      = m.width * m.depth;
+    const areaText   = m.living ? `${m.living} sq ft living · ${total} sq ft total` : `${total} sq ft footprint`;
+    slide.innerHTML  =
+      (m.imageUrl ? `<img src="${m.imageUrl}" class="slider-img" alt="${m.name}">` : '') +
+      `<div class="slider-body">` +
+        `<div class="slider-name">${m.name}</div>` +
+        `<div class="slider-area">${areaText}</div>` +
+        `<div class="slider-badges">` +
+          `<span class="badge">W: ${m.width} ft</span>` +
+          `<span class="badge">D: ${m.depth} ft</span>` +
+        `</div>` +
+        (m.living
+          ? `<div class="slider-rental">` +
+              `<span class="rental-label">est. rental income</span>` +
+              `<span class="slider-rental-val">–</span>` +
+              `<span class="slider-rental-loc">California avg</span>` +
+            `</div>`
+          : '') +
       `</div>`;
-    card.addEventListener('click', () => selectModel(m.id));
-    carousel.appendChild(card);
+    slider.appendChild(slide);
   });
+
+  // Detect swipe → change model via IntersectionObserver
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.intersectionRatio >= 0.6) {
+        const id = entry.target.dataset.id;
+        document.querySelectorAll('.slider-slide').forEach(s =>
+          s.classList.toggle('active', s.dataset.id === id)
+        );
+        if (id !== sel.value) {
+          sel.value = id;
+          updateUnitCard();
+          if (aduState) placeADU(aduState.center);
+        }
+      }
+    });
+  }, { root: slider, threshold: 0.6 });
+
+  slider.querySelectorAll('.slider-slide').forEach(s => observer.observe(s));
 
   sel.addEventListener('change', () => selectModel(sel.value));
   updateUnitCard();
