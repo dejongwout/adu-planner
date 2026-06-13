@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADU Lot Planner</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>Lot Planner</h1>
+        <p>Visualize your unit on any California lot</p>
+      </div>
+
+      <div class="sidebar-body">
+
+        <div class="form-section">
+          <label class="label" for="addressSearch">Address</label>
+          <div class="input-wrap">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" id="addressSearch" placeholder="Search a California address…" autocomplete="off" spellcheck="false" />
+            <ul class="suggestions" id="suggestions" hidden></ul>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <label class="label" for="modelSelect">ADU Model</label>
+          <div class="select-wrap">
+            <select id="modelSelect"></select>
+            <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="unit-card">
+          <div class="unit-dims">
+            <span id="unitW">–</span><span class="unit-x"> × </span><span id="unitD">–</span>
+            <span class="unit-ft"> ft</span>
+          </div>
+          <div class="unit-area" id="unitArea">– sq ft footprint</div>
+          <div class="unit-badges">
+            <span class="badge" id="badgeW">W: –</span>
+            <span class="badge" id="badgeD">D: –</span>
+          </div>
+        </div>
+
+        <div class="lot-section" id="lotSection" hidden>
+          <div class="label">Parcel info</div>
+          <div class="info-list">
+            <div class="info-row"><span class="info-key">Address</span><span class="info-val" id="lotAddress">–</span></div>
+            <div class="info-row"><span class="info-key">Lot area</span><span class="info-val" id="lotArea">–</span></div>
+            <div class="info-row"><span class="info-key">APN</span><span class="info-val" id="lotAPN">–</span></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="steps">
+          <div class="step"><span class="step-n">1</span><span>Search for an address to fly to the lot</span></div>
+          <div class="step"><span class="step-n">2</span><span>Select the ADU model to check</span></div>
+          <div class="step"><span class="step-n">3</span><span>Click the map to drop the unit footprint</span></div>
+          <div class="step"><span class="step-n">4</span><span>Drag to reposition · grab <strong>↺</strong> to rotate</span></div>
+        </div>
+
+        <div class="sidebar-footer">
+          <button class="btn-clear" id="btnClear" hidden>Remove unit</button>
+        </div>
+
+      </div>
+    </aside>
+
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="toast" id="toast">Click anywhere on the map to place your ADU</div>
+    </div>
+
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
