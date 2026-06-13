@@ -153,6 +153,14 @@ select:focus {
   padding: 16px 18px;
 }
 
+.unit-floorplan {
+  width: 100%;
+  border-radius: 6px;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 14px;
+}
+
 .unit-dims { font-size: 2rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px; }
 .unit-x    { color: var(--muted); font-weight: 400; }
 .unit-ft   { font-size: 1rem; font-weight: 500; color: var(--muted); }

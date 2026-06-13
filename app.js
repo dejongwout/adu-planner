@@ -344,6 +344,15 @@ function renderSuggestions(results, listEl) {
 function updateUnitCard() {
   const m     = getModel();
   const total = m.width * m.depth;
+  const fpEl = document.getElementById('unitFloorplan');
+  if (m.imageUrl) {
+    fpEl.src    = m.imageUrl;
+    fpEl.hidden = false;
+  } else {
+    fpEl.hidden = true;
+    fpEl.src    = '';
+  }
+
   document.getElementById('unitW').textContent    = m.width;
   document.getElementById('unitD').textContent    = m.depth;
   document.getElementById('unitArea').textContent = m.living
