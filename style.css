@@ -337,9 +337,10 @@ select:focus {
     order: 1;
   }
 
-  /* Hide header and dropdown on mobile */
+  /* Hide header, address label and dropdown on mobile */
   .sidebar-header { display: none; }
   #modelSection   { display: none; }
+  .form-section > .label { display: none; }
 
   .sidebar-body { padding: 14px 18px 18px; gap: 12px; }
 
