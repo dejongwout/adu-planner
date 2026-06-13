@@ -406,8 +406,6 @@ function updateUnitCard() {
     fpEl.src    = '';
   }
 
-  document.getElementById('unitW').textContent    = m.width;
-  document.getElementById('unitD').textContent    = m.depth;
   document.getElementById('unitArea').textContent = m.living
     ? `${m.living} sq ft living · ${total} sq ft total`
     : `${total.toLocaleString()} sq ft footprint`;
