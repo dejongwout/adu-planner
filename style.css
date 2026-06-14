@@ -56,9 +56,9 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: #0071e3;
-  background: #e8f0fb;
-  border: 1px solid #c0d8f7;
+  color: #004aad;
+  background: #ddeeff;
+  border: none;
   border-radius: 980px;
   padding: 3px 9px;
   white-space: nowrap;
