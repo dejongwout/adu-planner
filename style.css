@@ -242,17 +242,16 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
   font-weight: 500;
   color: var(--text);
   background: var(--bg);
-  border: 1.5px solid var(--border);
+  border: none;
   border-radius: var(--radius);
   padding: 10px 14px;
   cursor: pointer;
   text-align: left;
   width: 100%;
-  transition: background .12s, border-color .12s, color .12s;
+  transition: background .12s, color .12s;
 }
 .loc-answer:hover {
   background: var(--accent);
-  border-color: var(--accent);
   color: #fff;
 }
 
