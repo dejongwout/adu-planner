@@ -815,7 +815,7 @@ function buildModelSelect() {
   L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     {
-      maxZoom: 23, maxNativeZoom: 19,
+      maxZoom: 23, maxNativeZoom: 20,
       attribution: 'Imagery &copy; <a href="https://www.esri.com">Esri</a>',
     }
   ).addTo(map);
@@ -823,7 +823,7 @@ function buildModelSelect() {
   // Labels on top of satellite
   L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 23, maxNativeZoom: 19 }
+    { maxZoom: 23, maxNativeZoom: 20 }
   ).addTo(map);
 
   // Auto-detect location → fly there and populate address if user is in California
