@@ -637,7 +637,7 @@ function initSearch() {
   });
 }
 
-async function fetchSuggestions(query, listEl) {
+async function fetchSuggestions(query, listEl, onSelect) {
   const params = new URLSearchParams({
     q: query, format: 'json', limit: 5, countrycodes: 'us',
     viewbox: '-124.5,42.0,-114.1,32.5', bounded: 0,
@@ -645,18 +645,18 @@ async function fetchSuggestions(query, listEl) {
   try {
     const res     = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
     const results = await res.json();
-    renderSuggestions(results, listEl);
+    renderSuggestions(results, listEl, onSelect);
   } catch { listEl.hidden = true; }
 }
 
-function renderSuggestions(results, listEl) {
+function renderSuggestions(results, listEl, onSelect) {
   listEl.innerHTML = '';
   if (!results.length) { listEl.hidden = true; return; }
   results.forEach(r => {
     const { primary, secondary } = parseSuggestion(r.display_name);
     const li = document.createElement('li');
     li.innerHTML = `<div class="sug-primary">${primary}</div><div class="sug-secondary">${secondary}</div>`;
-    li.addEventListener('mousedown', (e) => { e.preventDefault(); selectSuggestion(r); });
+    li.addEventListener('mousedown', (e) => { e.preventDefault(); (onSelect || selectSuggestion)(r); });
     listEl.appendChild(li);
   });
   listEl.hidden = false;
@@ -798,33 +798,54 @@ function buildModelSelect() {
   updateUnitCard();
 }
 
-// ── Location browser (region → county → city) ────────────────────────────────
-function initLocationBrowser() {
-  const toggle  = document.getElementById('browseToggle');
-  const browser = document.getElementById('locationBrowser');
-  const header  = document.getElementById('browserHeader');
-  const backBtn = document.getElementById('browserBack');
-  const crumb   = document.getElementById('browserCrumb');
-  const chips   = document.getElementById('browserChips');
+// ── Location picker modal ─────────────────────────────────────────────────────
+function initLocModal() {
+  const mainInput  = document.getElementById('addressSearch');
+  const backdrop   = document.getElementById('locBackdrop');
+  const modal      = document.getElementById('locModal');
+  const locInput   = document.getElementById('locInput');
+  const locSuggs   = document.getElementById('locSuggestions');
+  const closeBtn   = document.getElementById('locClose');
+  const header     = document.getElementById('locBrowserHeader');
+  const backBtn    = document.getElementById('locBrowserBack');
+  const crumb      = document.getElementById('locBrowserCrumb');
+  const chips      = document.getElementById('locBrowserChips');
 
   let level = 0, selRegion = null, selCounty = null;
+  let locSearchTimer;
 
-  function render() {
+  function open() {
+    locInput.value  = mainInput.value;
+    modal.hidden    = false;
+    backdrop.hidden = false;
+    renderBrowser();
+    requestAnimationFrame(() => { locInput.focus(); if (locInput.value) locInput.select(); });
+  }
+
+  function close() {
+    modal.hidden    = true;
+    backdrop.hidden = true;
+    locSuggs.hidden = true;
+    clearTimeout(locSearchTimer);
+    level = 0; selRegion = null; selCounty = null;
+  }
+
+  function renderBrowser() {
     chips.innerHTML = '';
     if (level === 0) {
       header.hidden = true;
-      CA_REGIONS.forEach(r => addChip(r.name, () => { selRegion = r; level = 1; render(); }));
+      CA_REGIONS.forEach(r => addChip(r.name, () => { selRegion = r; level = 1; renderBrowser(); }));
     } else if (level === 1) {
       header.hidden = false;
       crumb.textContent = selRegion.name;
-      selRegion.counties.forEach(c => addChip(c.name, () => { selCounty = c; level = 2; render(); }));
+      selRegion.counties.forEach(c => addChip(c.name, () => { selCounty = c; level = 2; renderBrowser(); }));
     } else {
       header.hidden = false;
       crumb.textContent = `${selRegion.name} › ${selCounty.name}`;
       selCounty.cities.forEach(city => addChip(city.name, () => {
         map.setView([city.lat, city.lng], 15);
         fetchParcel(city.lat, city.lng, false);
-        document.getElementById('addressSearch').value = `${city.name}, CA`;
+        mainInput.value = `${city.name}, CA`;
         setClearVisible(true);
         close();
       }));
@@ -833,33 +854,76 @@ function initLocationBrowser() {
 
   function addChip(label, onClick) {
     const btn = document.createElement('button');
-    btn.type      = 'button';
+    btn.type = 'button';
     btn.className = 'browser-chip';
     btn.textContent = label;
     btn.addEventListener('click', onClick);
     chips.appendChild(btn);
   }
 
-  function close() {
-    browser.hidden = true;
-    toggle.classList.remove('open');
-    level = 0; selRegion = null; selCounty = null;
+  function selectFromModal(r) {
+    const { primary } = parseSuggestion(r.display_name);
+    mainInput.value = primary;
+    setClearVisible(true);
+    close();
+    const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+    map.setView([lat, lon], 19);
+    fetchParcel(lat, lon, true);
   }
 
-  toggle.addEventListener('click', () => {
-    const opening = browser.hidden;
-    browser.hidden = !opening;
-    toggle.classList.toggle('open', opening);
-    if (opening) render();
+  // Open modal when user clicks the address field
+  mainInput.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (modal.hidden) open();
   });
 
+  // Close on backdrop or X button
+  backdrop.addEventListener('click', close);
+  closeBtn.addEventListener('click', close);
+
+  // Escape key closes
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
+
+  // Back button in browse
   backBtn.addEventListener('click', () => {
     if (level === 2) { level = 1; selCounty = null; }
     else             { level = 0; selRegion = null; }
-    render();
+    renderBrowser();
   });
 
-  document.getElementById('addressSearch').addEventListener('focus', close);
+  // Search inside modal
+  let locHighlight = -1;
+  locInput.addEventListener('input', () => {
+    clearTimeout(locSearchTimer);
+    locHighlight = -1;
+    const q = locInput.value.trim();
+    if (q.length < 3) { locSuggs.hidden = true; return; }
+    locSearchTimer = setTimeout(() => fetchSuggestions(q, locSuggs, selectFromModal), 350);
+  });
+
+  locInput.addEventListener('keydown', (e) => {
+    const items = locSuggs.querySelectorAll('li');
+    if (!items.length || locSuggs.hidden) {
+      if (e.key === 'Escape') close();
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      locHighlight = Math.min(locHighlight + 1, items.length - 1);
+      items.forEach((li, i) => li.classList.toggle('highlighted', i === locHighlight));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      locHighlight = Math.max(locHighlight - 1, -1);
+      items.forEach((li, i) => li.classList.toggle('highlighted', i === locHighlight));
+    } else if (e.key === 'Enter' && locHighlight >= 0) {
+      e.preventDefault();
+      items[locHighlight].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
 }
 
 // ── Map init ──────────────────────────────────────────────────────────────────
@@ -913,7 +977,7 @@ function initLocationBrowser() {
 
   buildModelSelect();
   initSearch();
-  initLocationBrowser();
+  initLocModal();
   document.getElementById('btnClear').addEventListener('click', removeADU);
 
   // Re-measure after layout settles (important on iOS where fixed elements
