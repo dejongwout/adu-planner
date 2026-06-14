@@ -6,8 +6,67 @@ let clearancePolygon = null;
 let parcelLayer      = null;
 let rotMarker        = null;
 let aduState         = null; // { center: L.LatLng, widthM, heightM, rotation }
+let parcelFetchTimer = null;
+let currentRates     = { lo: 2.50, hi: 3.50, label: null }; // $/sq ft/month
 
 const CLEARANCE_M = 0.3048 * 4 * 2; // 4 ft each side → added to both width and height
+
+// Extract a Leaflet LatLng from either a Leaflet mouse event or a raw touch event.
+function eventLatLng(e) {
+  if (e.latlng) return e.latlng;
+  const orig  = e.originalEvent || e;
+  const touch = (orig.touches && orig.touches[0]) || (orig.changedTouches && orig.changedTouches[0]);
+  if (!touch) return null;
+  const rect = map.getContainer().getBoundingClientRect();
+  return map.containerPointToLatLng(L.point(touch.clientX - rect.left, touch.clientY - rect.top));
+}
+
+// ── California rental rates by county ($/sq ft/month) ────────────────────────
+// Source: Zillow Rent Index + Apartment List, 2024–2025
+const COUNTY_RATES = {
+  // Bay Area — premium
+  'San Francisco County':   { lo: 4.50, hi: 5.50 },
+  'San Mateo County':       { lo: 4.00, hi: 4.80 },
+  'Marin County':           { lo: 4.00, hi: 5.00 },
+  'Santa Clara County':     { lo: 3.50, hi: 4.50 },
+  'Alameda County':         { lo: 3.00, hi: 4.00 },
+  'Napa County':            { lo: 2.80, hi: 3.60 },
+  'Contra Costa County':    { lo: 2.50, hi: 3.20 },
+  'Sonoma County':          { lo: 2.40, hi: 3.20 },
+  'Solano County':          { lo: 2.00, hi: 2.70 },
+  // Southern California
+  'Los Angeles County':     { lo: 3.00, hi: 4.00 },
+  'Orange County':          { lo: 2.80, hi: 3.80 },
+  'San Diego County':       { lo: 3.00, hi: 4.00 },
+  'Santa Barbara County':   { lo: 2.80, hi: 3.80 },
+  'Ventura County':         { lo: 2.40, hi: 3.20 },
+  'Riverside County':       { lo: 1.80, hi: 2.60 },
+  'San Bernardino County':  { lo: 1.60, hi: 2.20 },
+  // Coastal Central
+  'Santa Cruz County':      { lo: 3.00, hi: 4.00 },
+  'Monterey County':        { lo: 2.50, hi: 3.50 },
+  'San Luis Obispo County': { lo: 2.50, hi: 3.50 },
+  // Sacramento / Foothills
+  'Placer County':          { lo: 2.20, hi: 3.00 },
+  'El Dorado County':       { lo: 2.00, hi: 2.80 },
+  'Sacramento County':      { lo: 1.80, hi: 2.50 },
+  'Yolo County':            { lo: 2.00, hi: 2.80 },
+  'Nevada County':          { lo: 2.00, hi: 2.80 },
+  // Central Valley
+  'San Joaquin County':     { lo: 1.60, hi: 2.20 },
+  'Stanislaus County':      { lo: 1.50, hi: 2.10 },
+  'Fresno County':          { lo: 1.40, hi: 2.00 },
+  'Tulare County':          { lo: 1.20, hi: 1.70 },
+  'Kings County':           { lo: 1.20, hi: 1.60 },
+  'Kern County':            { lo: 1.30, hi: 1.80 },
+  'Merced County':          { lo: 1.30, hi: 1.80 },
+  // North Coast / Inland North
+  'Mendocino County':       { lo: 1.80, hi: 2.50 },
+  'Humboldt County':        { lo: 1.50, hi: 2.20 },
+  'Lake County':            { lo: 1.20, hi: 1.80 },
+  'Shasta County':          { lo: 1.40, hi: 2.00 },
+};
+const DEFAULT_RATES = { lo: 2.50, hi: 3.50 };
 
 // ── Geo math ──────────────────────────────────────────────────────────────────
 const FT_TO_M       = 0.3048;
@@ -112,14 +171,7 @@ const FloorplanLayer = L.Layer.extend({
 function makeRotIcon() {
   return L.divIcon({
     className: '',
-    html:
-      `<svg class="rot-handle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44">` +
-        `<circle cx="22" cy="22" r="20" fill="white"/>` +
-        `<path d="M17 13.3 A10 10 0 0 1 32 22" stroke="#1d1d1f" stroke-width="2.5" fill="none" stroke-linecap="round"/>` +
-        `<path d="M29 19 L32 22 L35 19" stroke="#1d1d1f" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` +
-        `<path d="M27 30.7 A10 10 0 0 1 12 22" stroke="#1d1d1f" stroke-width="2.5" fill="none" stroke-linecap="round"/>` +
-        `<path d="M9 25 L12 22 L15 25" stroke="#1d1d1f" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` +
-      `</svg>`,
+    html: `<div class="rot-handle">↺</div>`,
     iconSize:   [44, 44],
     iconAnchor: [22, 22],
   });
@@ -131,22 +183,90 @@ function getModel() {
   return ADU_MODELS.find(m => m.id === id) || ADU_MODELS[0];
 }
 
+function updateCTA() {
+  const btn = document.getElementById('ctaBtn');
+  if (!aduState) { btn.hidden = true; return; }
+  const m = getModel();
+  btn.href = m.url || 'https://masayahomes.com';
+  document.getElementById('ctaModel').textContent = m.name;
+  btn.hidden = false;
+}
+
 function removeADU() {
   aduPolygon?.remove();
   aduImage?.remove();
   clearancePolygon?.remove();
   rotMarker?.remove();
-  aduPolygon = aduImage = clearancePolygon = rotMarker = aduState = null;
-  document.getElementById('btnClear').hidden = true;
+  parcelLayer?.remove();
+  aduPolygon = aduImage = clearancePolygon = rotMarker = aduState = parcelLayer = null;
+  document.getElementById('btnClear').hidden      = true;
+  document.getElementById('lotSection').hidden    = true;
+  document.getElementById('permitSection').hidden = true;
+  updateCTA();
 }
 
-function placeADU(latlng) {
+// ── Permit overview ───────────────────────────────────────────────────────────
+function buildPermitItems(model, countyLabel) {
+  const dept = countyLabel ? `${countyLabel} County Building Dept.` : 'your local building dept.';
+  return [
+    {
+      type:   'required',
+      title:  'Building Permit',
+      detail: `Required — issued by ${dept}`,
+    },
+    {
+      type:   'ok',
+      title:  'Ministerial approval',
+      detail: 'No public hearing or discretionary review under CA state law.',
+    },
+    model.living <= 800
+      ? { type: 'ok',   title: 'Impact fees waived',    detail: 'ADUs ≤ 800 sq ft are exempt from most impact fees (SB 13).' }
+      : { type: 'warn', title: 'Impact fees may apply', detail: 'Units > 800 sq ft may incur school, utility & park fees.' },
+    {
+      type:   'info',
+      title:  'Fire sprinklers',
+      detail: 'Only required if the primary residence already has them.',
+    },
+    {
+      type:   'ok',
+      title:  'No owner-occupancy required',
+      detail: 'State law removed this requirement through at least 2025.',
+    },
+  ];
+}
+
+function updatePermitSection() {
+  const section = document.getElementById('permitSection');
+  if (!aduState) { section.hidden = true; return; }
+
+  const model       = getModel();
+  const countyLabel = currentRates.label;
+
+  document.getElementById('permitContext').textContent =
+    [countyLabel ? `${countyLabel} County` : null, model.living ? `${model.living} sq ft` : null]
+      .filter(Boolean).join(' · ');
+
+  const icons = { required: '!', ok: '✓', warn: '!', info: 'i' };
+  document.getElementById('permitList').innerHTML = buildPermitItems(model, countyLabel)
+    .map(item => `
+      <li class="permit-item">
+        <div class="permit-icon ${item.type}">${icons[item.type]}</div>
+        <div>
+          <span class="permit-item-title">${item.title}</span>
+          <span class="permit-item-detail"> — ${item.detail}</span>
+        </div>
+      </li>`).join('');
+
+  section.hidden = false;
+}
+
+function placeADU(latlng, rotation = 0) {
   removeADU();
 
   const model   = getModel();
   const widthM  = ft2m(model.width);
   const heightM = ft2m(model.depth);
-  const rot     = 0;
+  const rot     = rotation;
   const center  = L.latLng(latlng.lat, latlng.lng);
   const hasImg  = !!model.imageUrl;
 
@@ -159,11 +279,11 @@ function placeADU(latlng) {
 
   // 4 ft clearance guideline
   clearancePolygon = L.polygon(calcCorners(center, widthM + CLEARANCE_M, heightM + CLEARANCE_M, rot), {
-    color:       '#ff9500',
+    color:       '#FFD60A',
     weight:      1.5,
     opacity:     0.85,
     dashArray:   '7 5',
-    fillColor:   '#ff9500',
+    fillColor:   '#FFD60A',
     fillOpacity: 0.07,
     interactive: false,
   }).addTo(map);
@@ -171,8 +291,8 @@ function placeADU(latlng) {
   // Outline polygon — filled (invisible fill) when image shown, filled blue otherwise
   aduPolygon = L.polygon(calcCorners(center, widthM, heightM, rot), {
     color:       '#0071e3',
-    weight:      2,
-    opacity:     1,
+    weight:      0,
+    opacity:     0,
     fillColor:   '#0071e3',
     fillOpacity: hasImg ? 0.01 : 0.28, // 0.01 = invisible but still hit-testable
     className:   'adu-poly',
@@ -186,32 +306,51 @@ function placeADU(latlng) {
     zIndexOffset: 100,
   }).addTo(map);
 
-  // ── Drag polygon to move ──
-  aduPolygon.on('mousedown', (e) => {
+  // ── Drag polygon to move (mouse + touch) ──
+  aduPolygon.on('mousedown touchstart', (e) => {
     L.DomEvent.stopPropagation(e);
+    const orig = e.originalEvent || e;
+    if (orig.preventDefault) orig.preventDefault();
     map.dragging.disable();
-    let last = e.latlng;
 
-    function onMove(ev) {
-      const dlat = ev.latlng.lat - last.lat;
-      const dlng = ev.latlng.lng - last.lng;
-      last = ev.latlng;
+    let last = eventLatLng(e);
+    if (!last) { map.dragging.enable(); return; }
+
+    function move(latlng) {
+      const dlat = latlng.lat - last.lat;
+      const dlng = latlng.lng - last.lng;
+      last = latlng;
       aduState.center = L.latLng(aduState.center.lat + dlat, aduState.center.lng + dlng);
       const { center: c2, widthM: w2, heightM: h2, rotation: r2 } = aduState;
       aduPolygon.setLatLngs(calcCorners(c2, w2, h2, r2));
       clearancePolygon.setLatLngs(calcCorners(c2, w2 + CLEARANCE_M, h2 + CLEARANCE_M, r2));
       rotMarker.setLatLng(handleLatLng(c2, h2, r2));
       aduImage?.setTransform(c2, r2);
+      clearTimeout(parcelFetchTimer);
+      parcelFetchTimer = setTimeout(() => fetchParcel(aduState.center.lat, aduState.center.lng), 800);
+    }
+
+    function onMouseMove(ev) { move(ev.latlng); }
+    function onTouchMove(ev) {
+      ev.preventDefault();
+      const ll = eventLatLng(ev);
+      if (ll) move(ll);
     }
 
     function onUp() {
-      map.off('mousemove', onMove);
+      map.off('mousemove', onMouseMove);
       map.off('mouseup', onUp);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onUp);
       map.dragging.enable();
+      clearTimeout(parcelFetchTimer);
+      fetchParcel(aduState.center.lat, aduState.center.lng);
     }
 
-    map.on('mousemove', onMove);
+    map.on('mousemove', onMouseMove);
     map.on('mouseup', onUp);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onUp);
   });
 
   aduPolygon.on('click', L.DomEvent.stopPropagation);
@@ -237,54 +376,64 @@ function placeADU(latlng) {
 
   document.getElementById('toast').classList.add('hidden');
   document.getElementById('btnClear').hidden = false;
+  updateCTA();
+  updatePermitSection();
 }
 
-// ── Parcel lookup (CA State Parcels — free, no key required) ──────────────────
+// ── Parcel lookup + rental rate (both run in parallel) ────────────────────────
 async function fetchParcel(lat, lng) {
   parcelLayer?.remove();
   parcelLayer = null;
+  document.getElementById('lotSection').hidden = true;
 
-  const BASE = 'https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CA_State_Parcels/FeatureServer/0/query';
-  const params = new URLSearchParams({
-    geometry:       `${lng},${lat}`,
-    geometryType:   'esriGeometryPoint',
-    inSR:           '4326',
-    spatialRel:     'esriSpatialRelIntersects',
-    outFields:      'PARCEL_APN,SITE_CITY,SITE_ADDR,Shape__Area',
-    outSR:          '4326',
-    f:              'geojson',
-    resultRecordCount: '1',
+  const PARCEL_URL = 'https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CA_State_Parcels/FeatureServer/0/query';
+  const parcelParams = new URLSearchParams({
+    geometry:            `${lng},${lat}`,
+    geometryType:        'esriGeometryPoint',
+    inSR:                '4326',
+    spatialRel:          'esriSpatialRelIntersects',
+    outFields:           'PARCEL_APN,SITE_CITY,SITE_ADDR,Shape__Area',
+    outSR:               '4326',
+    maxAllowableOffset:  '0',
+    f:                   'geojson',
+    resultRecordCount:   '1',
   });
 
-  try {
-    const res     = await fetch(`${BASE}?${params}`);
-    if (!res.ok) return;
-    const data    = await res.json();
-    const feature = data?.features?.[0];
-    if (!feature) return;
+  const [parcelResult, geoResult] = await Promise.allSettled([
+    fetch(`${PARCEL_URL}?${parcelParams}`).then(r => r.json()),
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`).then(r => r.json()),
+  ]);
 
-    // Draw parcel boundary
-    const geom  = feature.geometry;
-    const rings = geom.type === 'MultiPolygon' ? geom.coordinates[0] : geom.coordinates;
-    parcelLayer = L.polygon(
-      rings.map(ring => ring.map(([lo, la]) => [la, lo])),
-      { color: '#FFD60A', weight: 2.5, opacity: 1, fillColor: '#FFD60A', fillOpacity: 0.1, interactive: false }
-    ).addTo(map);
-
-    // Populate sidebar
-    const p     = feature.properties || {};
-    const areaM2 = p.Shape__Area || 0;
-    const sqft  = areaM2 > 0 ? `${Math.round(areaM2 * 10.764).toLocaleString()} sq ft` : null;
-    const acres = areaM2 > 0 ? `${(areaM2 / 4047).toFixed(3)} ac` : null;
-    const addr  = [p.SITE_ADDR, p.SITE_CITY].filter(Boolean).join(', ') || '–';
-
-    document.getElementById('lotAddress').textContent = addr;
-    document.getElementById('lotArea').textContent    = [sqft, acres].filter(Boolean).join(' · ') || '–';
-    document.getElementById('lotAPN').textContent     = p.PARCEL_APN || '–';
-    document.getElementById('lotSection').hidden      = false;
-  } catch (err) {
-    console.warn('Parcel lookup failed:', err);
+  // Update rental rates from reverse geocode
+  if (geoResult.status === 'fulfilled') {
+    const county = geoResult.value?.address?.county || '';
+    currentRates = { ...(COUNTY_RATES[county] || DEFAULT_RATES), label: county.replace(' County', '') };
+    updateRentalDisplay();
+    updatePermitSection();
   }
+
+  // Draw parcel boundary + sidebar
+  if (parcelResult.status !== 'fulfilled') return;
+  const feature = parcelResult.value?.features?.[0];
+  if (!feature) return;
+
+  const geom  = feature.geometry;
+  const rings = geom.type === 'MultiPolygon' ? geom.coordinates[0] : geom.coordinates;
+  parcelLayer = L.polygon(
+    rings.map(ring => ring.map(([lo, la]) => [la, lo])),
+    { color: '#FFD60A', weight: 2.5, opacity: 1, fillColor: '#FFD60A', fillOpacity: 0.1, interactive: false }
+  ).addTo(map);
+
+  const p      = feature.properties || {};
+  const areaM2 = p.Shape__Area || 0;
+  const sqft   = areaM2 > 0 ? `${Math.round(areaM2 * 10.764).toLocaleString()} sq ft` : null;
+  const acres  = areaM2 > 0 ? `${(areaM2 / 4047).toFixed(3)} ac` : null;
+  const addr   = [p.SITE_ADDR, p.SITE_CITY].filter(Boolean).join(', ') || '–';
+
+  document.getElementById('lotAddress').textContent = addr;
+  document.getElementById('lotArea').textContent    = [sqft, acres].filter(Boolean).join(' · ') || '–';
+  document.getElementById('lotAPN').textContent     = p.PARCEL_APN || '–';
+  document.getElementById('lotSection').hidden      = false;
 }
 
 // ── Address search (Nominatim) ────────────────────────────────────────────────
@@ -341,36 +490,144 @@ function renderSuggestions(results, listEl) {
 function updateUnitCard() {
   const m     = getModel();
   const total = m.width * m.depth;
-  document.getElementById('unitW').textContent    = m.width;
-  document.getElementById('unitD').textContent    = m.depth;
+  const fpEl = document.getElementById('unitFloorplan');
+  if (m.imageUrl) {
+    fpEl.src    = m.imageUrl;
+    fpEl.hidden = false;
+  } else {
+    fpEl.hidden = true;
+    fpEl.src    = '';
+  }
+
   document.getElementById('unitArea').textContent = m.living
     ? `${m.living} sq ft living · ${total} sq ft total`
     : `${total.toLocaleString()} sq ft footprint`;
   document.getElementById('badgeW').textContent   = `W: ${m.width} ft`;
   document.getElementById('badgeD').textContent   = `D: ${m.depth} ft`;
+
+  updateRentalDisplay();
+  updatePermitSection();
+}
+
+function updateRentalDisplay() {
+  const locLabel = currentRates.label ? `${currentRates.label} County market` : 'California avg';
+
+  // Update desktop unit card
+  const m = getModel();
+  if (m.living) {
+    const lo = Math.round(m.living * currentRates.lo / 50) * 50;
+    const hi = Math.round(m.living * currentRates.hi / 50) * 50;
+    document.getElementById('unitRental').textContent     = `$${lo.toLocaleString()} – $${hi.toLocaleString()} / mo`;
+    document.getElementById('rentalLocation').textContent = locLabel;
+    document.getElementById('rentalRow').hidden           = false;
+  } else {
+    document.getElementById('rentalRow').hidden = true;
+  }
+
+  // Update all mobile slider slides
+  ADU_MODELS.forEach(model => {
+    const slide = document.querySelector(`.slider-slide[data-id="${model.id}"]`);
+    if (!slide || !model.living) return;
+    const lo = Math.round(model.living * currentRates.lo / 50) * 50;
+    const hi = Math.round(model.living * currentRates.hi / 50) * 50;
+    const rv = slide.querySelector('.slider-rental-val');
+    const rl = slide.querySelector('.slider-rental-loc');
+    if (rv) rv.textContent = `$${lo.toLocaleString()} – $${hi.toLocaleString()} / mo`;
+    if (rl) rl.textContent = locLabel;
+  });
+}
+
+function selectModel(id) {
+  const savedCenter   = aduState?.center;
+  const savedRotation = aduState?.rotation ?? 0;
+  document.getElementById('modelSelect').value = id;
+  // Sync desktop carousel cards (hidden on mobile but keep in sync)
+  document.querySelectorAll('.carousel-card').forEach(c =>
+    c.classList.toggle('active', c.dataset.id === id)
+  );
+  // Scroll mobile slider to the matching slide
+  const slide = document.querySelector(`.slider-slide[data-id="${id}"]`);
+  if (slide) slide.parentElement.scrollTo({ left: slide.offsetLeft - 18, behavior: 'smooth' });
+  updateUnitCard();
+  if (savedCenter) placeADU(savedCenter, savedRotation);
+  else updateCTA();
 }
 
 function buildModelSelect() {
-  const sel = document.getElementById('modelSelect');
-  ADU_MODELS.forEach(m => {
+  const sel    = document.getElementById('modelSelect');
+  const slider = document.getElementById('unitSlider');
+
+  ADU_MODELS.forEach((m, i) => {
+    // Desktop dropdown option
     const opt       = document.createElement('option');
     opt.value       = m.id;
     opt.textContent = `${m.name}  (${m.width} × ${m.depth} ft)`;
     sel.appendChild(opt);
+
+    // Mobile full-info slide
+    const slide = document.createElement('div');
+    slide.className  = 'slider-slide' + (i === 0 ? ' active' : '');
+    slide.dataset.id = m.id;
+    const total      = m.width * m.depth;
+    const areaText   = m.living ? `${m.living} sq ft living · ${total} sq ft total` : `${total} sq ft footprint`;
+    slide.innerHTML  =
+      `<div class="slider-body">` +
+        `<div class="slider-name">${m.name}</div>` +
+        `<div class="slider-area">${areaText}</div>` +
+        `<div class="slider-badges">` +
+          `<span class="badge">W: ${m.width} ft</span>` +
+          `<span class="badge">D: ${m.depth} ft</span>` +
+        `</div>` +
+        (m.living
+          ? `<div class="slider-rental">` +
+              `<span class="rental-label">est. rental income</span>` +
+              `<span class="slider-rental-val">–</span>` +
+              `<span class="slider-rental-loc">California avg</span>` +
+            `</div>`
+          : '') +
+      `</div>`;
+    slider.appendChild(slide);
   });
-  sel.addEventListener('change', () => {
-    updateUnitCard();
-    if (aduState) placeADU(aduState.center);
-  });
+
+  // Detect swipe → change model via debounced scroll (reliable on iOS Safari)
+  let snapTimer;
+  slider.addEventListener('scroll', () => {
+    clearTimeout(snapTimer);
+    snapTimer = setTimeout(() => {
+      const firstSlide = slider.querySelector('.slider-slide');
+      if (!firstSlide) return;
+      const slideW = firstSlide.offsetWidth;
+      const gap    = 10;
+      const idx    = Math.min(
+        Math.round(slider.scrollLeft / (slideW + gap)),
+        ADU_MODELS.length - 1
+      );
+      const id = ADU_MODELS[idx]?.id;
+      if (!id) return;
+      slider.querySelectorAll('.slider-slide').forEach(s =>
+        s.classList.toggle('active', s.dataset.id === id)
+      );
+      if (id !== sel.value) {
+        const savedCenter   = aduState?.center;
+        const savedRotation = aduState?.rotation ?? 0;
+        sel.value = id;
+        updateUnitCard();
+        if (savedCenter) placeADU(savedCenter, savedRotation);
+        else updateCTA();
+      }
+    }, 80);
+  }, { passive: true });
+
+  sel.addEventListener('change', () => selectModel(sel.value));
   updateUnitCard();
 }
 
 // ── Map init ──────────────────────────────────────────────────────────────────
 (function init() {
   map = L.map('map', {
-    center: [38.1, -122.5],
-    zoom:   11,
-    zoomControl: true,
+    center: [37.7749, -122.4194], // San Francisco — overridden by geolocation if user is in CA
+    zoom:   12,
+    zoomControl: false,
   });
 
   // Custom pane for floor plan image — sits below the vector overlay pane (z 400)
@@ -393,12 +650,19 @@ function buildModelSelect() {
     { maxZoom: 23, maxNativeZoom: 19 }
   ).addTo(map);
 
-  // Auto-detect location → fly there if user is in California
+  // Auto-detect location → fly there and populate address if user is in California
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((pos) => {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude: lat, longitude: lng } = pos.coords;
       const inCA = lat >= 32.5 && lat <= 42.0 && lng >= -124.5 && lng <= -114.1;
-      if (inCA) map.setView([lat, lng], 15);
+      if (!inCA) return;
+      map.setView([lat, lng], 16);
+      try {
+        const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+        const data = await res.json();
+        const addr = data?.display_name || '';
+        if (addr) document.getElementById('addressSearch').value = addr;
+      } catch { /* silent */ }
     });
   }
 
@@ -410,4 +674,18 @@ function buildModelSelect() {
   buildModelSelect();
   initSearch();
   document.getElementById('btnClear').addEventListener('click', removeADU);
+
+  // Re-measure after layout settles (important on iOS where fixed elements
+  // may resize after the initial paint behind the Dynamic Island)
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    map.invalidateSize();
+    syncSheetHeight();
+  }));
+
+  function syncSheetHeight() {
+    if (window.innerWidth > 768) return;
+    const h = document.querySelector('.sidebar')?.offsetHeight ?? 300;
+    document.documentElement.style.setProperty('--sheet-h', h + 'px');
+  }
+  window.addEventListener('resize', syncSheetHeight);
 })();

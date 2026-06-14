@@ -55,9 +55,9 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--muted);
-  background: var(--bg);
-  border: 1px solid var(--border);
+  color: #0071e3;
+  background: #e8f0fb;
+  border: 1px solid #c0d8f7;
   border-radius: 980px;
   padding: 3px 9px;
   white-space: nowrap;
@@ -338,6 +338,72 @@ select:focus {
   margin-top: 1px;
 }
 
+/* ── Permit section ─────────────────────────────────────────────── */
+.permit-section {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.permit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.permit-context {
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+.permit-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.permit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.permit-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.permit-icon.required { background: #ff3b30; color: #fff; }
+.permit-icon.ok       { background: #34c759; color: #fff; }
+.permit-icon.warn     { background: #ff9f0a; color: #fff; }
+.permit-icon.info     { background: var(--bg); border: 1px solid var(--border); color: var(--muted); }
+
+.permit-item-title  { font-weight: 500; color: var(--text); }
+.permit-item-detail { color: var(--muted); }
+
+.permit-disclaimer {
+  font-size: 0.625rem;
+  color: var(--muted);
+  line-height: 1.5;
+  padding-top: 2px;
+  border-top: 1px solid var(--border);
+}
+
 /* ── Footer ─────────────────────────────────────────────────────── */
 .sidebar-footer { }
 
@@ -481,6 +547,7 @@ select:focus {
   .form-section > .label { display: none; }
   .unit-card             { display: none; }
   #lotSection            { display: none; }
+  #permitSection         { display: none; }
   .sidebar-footer        { display: none; }
 
   /* Sidebar body: no horizontal padding — restored on individual sections */

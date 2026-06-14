@@ -199,9 +199,65 @@ function removeADU() {
   rotMarker?.remove();
   parcelLayer?.remove();
   aduPolygon = aduImage = clearancePolygon = rotMarker = aduState = parcelLayer = null;
-  document.getElementById('btnClear').hidden   = true;
-  document.getElementById('lotSection').hidden = true;
+  document.getElementById('btnClear').hidden      = true;
+  document.getElementById('lotSection').hidden    = true;
+  document.getElementById('permitSection').hidden = true;
   updateCTA();
+}
+
+// ── Permit overview ───────────────────────────────────────────────────────────
+function buildPermitItems(model, countyLabel) {
+  const dept = countyLabel ? `${countyLabel} County Building Dept.` : 'your local building dept.';
+  return [
+    {
+      type:   'required',
+      title:  'Building Permit',
+      detail: `Required — issued by ${dept}`,
+    },
+    {
+      type:   'ok',
+      title:  'Ministerial approval',
+      detail: 'No public hearing or discretionary review under CA state law.',
+    },
+    model.living <= 800
+      ? { type: 'ok',   title: 'Impact fees waived',    detail: 'ADUs ≤ 800 sq ft are exempt from most impact fees (SB 13).' }
+      : { type: 'warn', title: 'Impact fees may apply', detail: 'Units > 800 sq ft may incur school, utility & park fees.' },
+    {
+      type:   'info',
+      title:  'Fire sprinklers',
+      detail: 'Only required if the primary residence already has them.',
+    },
+    {
+      type:   'ok',
+      title:  'No owner-occupancy required',
+      detail: 'State law removed this requirement through at least 2025.',
+    },
+  ];
+}
+
+function updatePermitSection() {
+  const section = document.getElementById('permitSection');
+  if (!aduState) { section.hidden = true; return; }
+
+  const model       = getModel();
+  const countyLabel = currentRates.label;
+
+  document.getElementById('permitContext').textContent =
+    [countyLabel ? `${countyLabel} County` : null, model.living ? `${model.living} sq ft` : null]
+      .filter(Boolean).join(' · ');
+
+  const icons = { required: '!', ok: '✓', warn: '!', info: 'i' };
+  document.getElementById('permitList').innerHTML = buildPermitItems(model, countyLabel)
+    .map(item => `
+      <li class="permit-item">
+        <div class="permit-icon ${item.type}">${icons[item.type]}</div>
+        <div>
+          <span class="permit-item-title">${item.title}</span>
+          <span class="permit-item-detail"> — ${item.detail}</span>
+        </div>
+      </li>`).join('');
+
+  section.hidden = false;
 }
 
 function placeADU(latlng, rotation = 0) {
@@ -321,6 +377,7 @@ function placeADU(latlng, rotation = 0) {
   document.getElementById('toast').classList.add('hidden');
   document.getElementById('btnClear').hidden = false;
   updateCTA();
+  updatePermitSection();
 }
 
 // ── Parcel lookup + rental rate (both run in parallel) ────────────────────────
@@ -352,6 +409,7 @@ async function fetchParcel(lat, lng) {
     const county = geoResult.value?.address?.county || '';
     currentRates = { ...(COUNTY_RATES[county] || DEFAULT_RATES), label: county.replace(' County', '') };
     updateRentalDisplay();
+    updatePermitSection();
   }
 
   // Draw parcel boundary + sidebar
@@ -448,6 +506,7 @@ function updateUnitCard() {
   document.getElementById('badgeD').textContent   = `D: ${m.depth} ft`;
 
   updateRentalDisplay();
+  updatePermitSection();
 }
 
 function updateRentalDisplay() {
