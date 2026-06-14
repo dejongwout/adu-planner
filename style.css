@@ -232,21 +232,22 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
 .loc-answers {
   padding: 4px 14px 6px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .loc-answer {
   font-family: var(--font);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text);
   background: var(--bg);
   border: 1.5px solid var(--border);
-  border-radius: 980px;
-  padding: 5px 12px;
+  border-radius: var(--radius);
+  padding: 10px 14px;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: left;
+  width: 100%;
   transition: background .12s, border-color .12s, color .12s;
 }
 .loc-answer:hover {
