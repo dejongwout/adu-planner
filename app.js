@@ -115,12 +115,13 @@ function handleLatLng(center, heightM, rot) {
 // Custom Leaflet layer that places a top-down floor plan image on the map,
 // scaled to real-world meters and rotated with the ADU.
 const FloorplanLayer = L.Layer.extend({
-  initialize(center, widthM, heightM, rotation, imageUrl) {
-    this.center   = center;
-    this.widthM   = widthM;
-    this.heightM  = heightM;
-    this.rotation = rotation;
-    this.imageUrl = imageUrl;
+  initialize(center, widthM, heightM, rotation, imageUrl, imageRotation = 0) {
+    this.center        = center;
+    this.widthM        = widthM;
+    this.heightM       = heightM;
+    this.rotation      = rotation;
+    this.imageUrl      = imageUrl;
+    this.imageRotation = imageRotation;
   },
 
   onAdd(map) {
@@ -153,18 +154,21 @@ const FloorplanLayer = L.Layer.extend({
   },
 
   _reposition() {
-    const map = this._map;
-    const c   = this.center;
-    const mpp = metersPerPixel(c.lat, map.getZoom());
-    const pw  = this.widthM  / mpp;
-    const ph  = this.heightM / mpp;
+    const map     = this._map;
+    const c       = this.center;
+    const mpp     = metersPerPixel(c.lat, map.getZoom());
+    // When imageRotation is ±90° the image's own axes are swapped relative to
+    // the polygon, so we swap the pixel container dimensions to avoid stretching.
+    const swapped = Math.abs(Math.round(this.imageRotation / (Math.PI / 2))) % 2 === 1;
+    const pw  = (swapped ? this.heightM : this.widthM)  / mpp;
+    const ph  = (swapped ? this.widthM  : this.heightM) / mpp;
     const pt  = map.latLngToLayerPoint(c);
     const s   = this._img.style;
     s.width     = `${pw}px`;
     s.height    = `${ph}px`;
     s.left      = `${pt.x - pw / 2}px`;
     s.top       = `${pt.y - ph / 2}px`;
-    s.transform = `rotate(${this.rotation}rad)`;
+    s.transform = `rotate(${this.rotation + this.imageRotation}rad)`;
   },
 });
 
@@ -396,7 +400,7 @@ function placeADU(latlng, rotation = 0) {
 
   // Floor plan image (below the polygon so polygon handles drag)
   if (hasImg) {
-    aduImage = new FloorplanLayer(center, widthM, heightM, rot, model.imageUrl).addTo(map);
+    aduImage = new FloorplanLayer(center, widthM, heightM, rot, model.imageUrl, model.imageRotation || 0).addTo(map);
   }
 
   // 4 ft clearance guideline

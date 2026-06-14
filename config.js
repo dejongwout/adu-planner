@@ -278,7 +278,8 @@ const ADU_MODELS = [
     depth:    20,
     living:   300,
     url:      'https://masayahomes.com/adu/s-studio',
-    imageUrl: 'https://framerusercontent.com/images/AwLmr6xFst4p8ceSnR3JoGeP4Ng.webp',
+    imageUrl:      'https://framerusercontent.com/images/AwLmr6xFst4p8ceSnR3JoGeP4Ng.webp',
+    imageRotation: Math.PI / 2,
   },
   {
     id:     's-1bed',
