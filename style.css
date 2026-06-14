@@ -348,12 +348,12 @@ select:focus {
 
 .permit-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .permit-context {
-  font-size: 0.6875rem;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 
