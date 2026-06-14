@@ -206,14 +206,18 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--accent);
+  -webkit-text-fill-color: var(--accent);
   background: none;
   border: none;
+  -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
   padding: 0;
   display: flex;
   align-items: center;
   gap: 4px;
 }
+.loc-back svg { color: var(--accent); }
 .loc-back:hover { text-decoration: underline; }
 
 .loc-question {
