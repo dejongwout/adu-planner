@@ -49,8 +49,19 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
   border-bottom: 1px solid var(--border);
 }
 
-.masaya-logo { display: block; width: auto; height: 21px; color: var(--text); margin-bottom: 18px; }
-.sidebar-header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 5px; }
+.logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.masaya-logo { display: block; width: auto; height: 21px; color: var(--text); flex-shrink: 0; }
+.logo-pill {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 980px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
 .sidebar-header p  { font-size: 0.8125rem; color: var(--muted); line-height: 1.45; }
 
 .sidebar-body {
