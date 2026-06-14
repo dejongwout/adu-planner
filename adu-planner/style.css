@@ -42,6 +42,7 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .sidebar-header {
