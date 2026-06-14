@@ -593,7 +593,7 @@ function initAddressPanel() {
   let level = 0, selRegion = null, selCounty = null, selCity = null, selStreet = null;
 
   const QUESTIONS = [
-    () => 'Which area of California are you in?',
+    () => 'Where in California?',
     () => `Which county in ${selRegion.name}?`,
     () => `Which city in ${selCounty.name} County?`,
     () => `What street in ${selCity.name}?`,
