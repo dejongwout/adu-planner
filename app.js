@@ -553,8 +553,8 @@ function buildModelSelect() {
 // ── Map init ──────────────────────────────────────────────────────────────────
 (function init() {
   map = L.map('map', {
-    center: [38.1, -122.5],
-    zoom:   11,
+    center: [37.7749, -122.4194], // San Francisco — overridden by geolocation if user is in CA
+    zoom:   13,
     zoomControl: false,
   });
 
