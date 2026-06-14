@@ -620,9 +620,10 @@ function initAddressPanel() {
     backRow.hidden = level === 0;
     answersEl.innerHTML = '';
 
-    const items = level === 0 ? CA_REGIONS
+    const src   = level === 0 ? CA_REGIONS
                 : level === 1 ? selRegion.counties
                 : selCounty.cities;
+    const items = [...src].sort((a, b) => a.name.localeCompare(b.name));
 
     items.forEach(item => {
       const btn = document.createElement('button');
