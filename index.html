@@ -14,9 +14,17 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="logo-row">
-          <div class="app-icon">
-            <img src="https://framerusercontent.com/images/ioXIs8nomjJzesaJAWk53YzTs7g.png" alt="Masaya" />
-          </div>
+          <svg class="app-icon" viewBox="0 0 100 100" width="34" height="34" xmlns="http://www.w3.org/2000/svg" aria-label="Masaya">
+            <defs>
+              <clipPath id="squircle-clip">
+                <path d="M50 0 C10 0 0 10 0 50 C0 90 10 100 50 100 C90 100 100 90 100 50 C100 10 90 0 50 0 Z"/>
+              </clipPath>
+            </defs>
+            <path d="M50 2 C11.6 2 2 11.6 2 50 C2 88.4 11.6 98 50 98 C88.4 98 98 88.4 98 50 C98 11.6 88.4 2 50 2 Z" fill="var(--bg)" stroke="var(--border)" stroke-width="4"/>
+            <g clip-path="url(#squircle-clip)" transform="translate(50,50) scale(3.8) translate(-89,-14.6)">
+              <path d="M 95.838 14.019 L 90.831 14.37 L 94.62 11.093 L 93.047 9.525 L 89.748 13.303 L 90.101 8.317 L 87.9 8.317 L 88.253 13.303 L 84.955 9.525 L 83.382 11.093 L 87.17 14.37 L 82.164 14.019 L 82.173 16.23 L 88.295 15.799 L 87.887 20.811 L 90.114 20.811 L 89.708 15.799 L 95.838 16.23 Z" fill="var(--text)"/>
+            </g>
+          </svg>
           <span class="app-name">Planner</span>
         </div>
         <p>Drop an ADU on any California lot to explore fit, rental income, and permit requirements.</p>
