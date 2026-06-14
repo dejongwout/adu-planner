@@ -340,13 +340,9 @@ select:focus {
 
 /* ── Permit section ─────────────────────────────────────────────── */
 .permit-section {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
 }
 
 .permit-header {
@@ -362,8 +358,8 @@ select:focus {
 
 .permit-list {
   list-style: none;
-  border: 1px solid var(--border);
-  border-radius: calc(var(--radius) - 2px);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
   overflow: hidden;
 }
 
@@ -374,7 +370,7 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 11px;
+  padding: 10px 14px;
   text-decoration: none;
   color: inherit;
   transition: background .12s;
@@ -407,8 +403,6 @@ select:focus {
   font-size: 0.625rem;
   color: var(--muted);
   line-height: 1.5;
-  padding-top: 2px;
-  border-top: 1px solid var(--border);
 }
 
 /* ── Footer ─────────────────────────────────────────────────────── */
