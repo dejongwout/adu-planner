@@ -800,129 +800,79 @@ function buildModelSelect() {
 
 // ── Location picker modal ─────────────────────────────────────────────────────
 function initLocModal() {
-  const mainInput  = document.getElementById('addressSearch');
+  const trigger    = document.getElementById('locTrigger');
   const backdrop   = document.getElementById('locBackdrop');
   const modal      = document.getElementById('locModal');
-  const locInput   = document.getElementById('locInput');
-  const locSuggs   = document.getElementById('locSuggestions');
   const closeBtn   = document.getElementById('locClose');
-  const header     = document.getElementById('locBrowserHeader');
-  const backBtn    = document.getElementById('locBrowserBack');
-  const crumb      = document.getElementById('locBrowserCrumb');
-  const chips      = document.getElementById('locBrowserChips');
+  const backBtn    = document.getElementById('locBack');
+  const questionEl = document.getElementById('locQuestion');
+  const answersEl  = document.getElementById('locAnswers');
 
   let level = 0, selRegion = null, selCounty = null;
-  let locSearchTimer;
+
+  const QUESTIONS = [
+    () => 'Which area of California are you in?',
+    () => `Which county in ${selRegion.name}?`,
+    () => `Which city in ${selCounty.name} County?`,
+  ];
 
   function open() {
-    locInput.value  = mainInput.value;
+    level = 0; selRegion = null; selCounty = null;
     modal.hidden    = false;
     backdrop.hidden = false;
-    renderBrowser();
-    requestAnimationFrame(() => { locInput.focus(); if (locInput.value) locInput.select(); });
+    renderStep();
   }
 
   function close() {
     modal.hidden    = true;
     backdrop.hidden = true;
-    locSuggs.hidden = true;
-    clearTimeout(locSearchTimer);
     level = 0; selRegion = null; selCounty = null;
   }
 
-  function renderBrowser() {
-    chips.innerHTML = '';
-    if (level === 0) {
-      header.hidden = true;
-      CA_REGIONS.forEach(r => addChip(r.name, () => { selRegion = r; level = 1; renderBrowser(); }));
-    } else if (level === 1) {
-      header.hidden = false;
-      crumb.textContent = selRegion.name;
-      selRegion.counties.forEach(c => addChip(c.name, () => { selCounty = c; level = 2; renderBrowser(); }));
-    } else {
-      header.hidden = false;
-      crumb.textContent = `${selRegion.name} › ${selCounty.name}`;
-      selCounty.cities.forEach(city => addChip(city.name, () => {
-        map.setView([city.lat, city.lng], 15);
-        fetchParcel(city.lat, city.lng, false);
-        mainInput.value = `${city.name}, CA`;
-        setClearVisible(true);
-        close();
-      }));
-    }
+  function renderStep() {
+    questionEl.textContent = QUESTIONS[level]();
+    backBtn.hidden = level === 0;
+    answersEl.innerHTML = '';
+
+    const items = level === 0 ? CA_REGIONS
+                : level === 1 ? selRegion.counties
+                : selCounty.cities;
+
+    items.forEach(item => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'loc-answer';
+      btn.textContent = item.name;
+      btn.addEventListener('click', () => {
+        if (level === 0) {
+          selRegion = item; level = 1; renderStep();
+        } else if (level === 1) {
+          selCounty = item; level = 2; renderStep();
+        } else {
+          const mainInput = document.getElementById('addressSearch');
+          map.setView([item.lat, item.lng], 15);
+          fetchParcel(item.lat, item.lng, false);
+          mainInput.value = `${item.name}, CA`;
+          setClearVisible(true);
+          close();
+        }
+      });
+      answersEl.appendChild(btn);
+    });
   }
 
-  function addChip(label, onClick) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'browser-chip';
-    btn.textContent = label;
-    btn.addEventListener('click', onClick);
-    chips.appendChild(btn);
-  }
-
-  function selectFromModal(r) {
-    const { primary } = parseSuggestion(r.display_name);
-    mainInput.value = primary;
-    setClearVisible(true);
-    close();
-    const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
-    map.setView([lat, lon], 19);
-    fetchParcel(lat, lon, true);
-  }
-
-  // Open modal when user clicks the address field
-  mainInput.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    if (modal.hidden) open();
-  });
-
-  // Close on backdrop or X button
+  trigger.addEventListener('click', open);
   backdrop.addEventListener('click', close);
   closeBtn.addEventListener('click', close);
 
-  // Escape key closes
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.hidden) close();
   });
 
-  // Back button in browse
   backBtn.addEventListener('click', () => {
     if (level === 2) { level = 1; selCounty = null; }
     else             { level = 0; selRegion = null; }
-    renderBrowser();
-  });
-
-  // Search inside modal
-  let locHighlight = -1;
-  locInput.addEventListener('input', () => {
-    clearTimeout(locSearchTimer);
-    locHighlight = -1;
-    const q = locInput.value.trim();
-    if (q.length < 3) { locSuggs.hidden = true; return; }
-    locSearchTimer = setTimeout(() => fetchSuggestions(q, locSuggs, selectFromModal), 350);
-  });
-
-  locInput.addEventListener('keydown', (e) => {
-    const items = locSuggs.querySelectorAll('li');
-    if (!items.length || locSuggs.hidden) {
-      if (e.key === 'Escape') close();
-      return;
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      locHighlight = Math.min(locHighlight + 1, items.length - 1);
-      items.forEach((li, i) => li.classList.toggle('highlighted', i === locHighlight));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      locHighlight = Math.max(locHighlight - 1, -1);
-      items.forEach((li, i) => li.classList.toggle('highlighted', i === locHighlight));
-    } else if (e.key === 'Enter' && locHighlight >= 0) {
-      e.preventDefault();
-      items[locHighlight].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    } else if (e.key === 'Escape') {
-      close();
-    }
+    renderStep();
   });
 }
 

@@ -37,6 +37,7 @@
             </button>
             <ul class="suggestions" id="suggestions" hidden></ul>
           </div>
+          <button class="loc-trigger" id="locTrigger" type="button">Not sure of your address? Find by area</button>
         </div>
 
         <div class="form-section" id="modelSection">
@@ -114,30 +115,18 @@
 
   <!-- Location picker modal -->
   <div class="loc-backdrop" id="locBackdrop" hidden></div>
-  <div class="loc-modal" id="locModal" hidden role="dialog" aria-modal="true" aria-label="Find a location">
-    <div class="loc-modal-search">
-      <div class="loc-input-row">
-        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input class="loc-input" type="text" id="locInput" placeholder="Search an address…" autocomplete="off" spellcheck="false"/>
-        <button class="loc-close" id="locClose" type="button" aria-label="Close">
-          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <ul class="suggestions" id="locSuggestions" hidden></ul>
-      </div>
+  <div class="loc-modal" id="locModal" hidden role="dialog" aria-modal="true" aria-label="Find your location">
+    <div class="loc-modal-head">
+      <button class="loc-back" id="locBack" type="button" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+      <button class="loc-close" id="locClose" type="button" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
-    <div class="loc-browse">
-      <div class="loc-browse-label">Browse by area</div>
-      <div class="browser-header" id="locBrowserHeader" hidden>
-        <button class="browser-back" id="locBrowserBack" type="button">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          Back
-        </button>
-        <span class="browser-crumb" id="locBrowserCrumb"></span>
-      </div>
-      <div class="browser-chips" id="locBrowserChips"></div>
-    </div>
+    <div class="loc-question" id="locQuestion"></div>
+    <div class="loc-answers" id="locAnswers"></div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
