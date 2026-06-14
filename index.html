@@ -37,6 +37,20 @@
             </button>
             <ul class="suggestions" id="suggestions" hidden></ul>
           </div>
+          <button class="browse-toggle" id="browseToggle" type="button">
+            or browse by area
+            <svg class="browse-chevron" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="location-browser" id="locationBrowser" hidden>
+            <div class="browser-header" id="browserHeader" hidden>
+              <button class="browser-back" id="browserBack" type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Back
+              </button>
+              <span class="browser-crumb" id="browserCrumb"></span>
+            </div>
+            <div class="browser-chips" id="browserChips"></div>
+          </div>
         </div>
 
         <div class="form-section" id="modelSection">

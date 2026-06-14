@@ -163,6 +163,93 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
 .sug-primary   { font-size: 0.8125rem; font-weight: 500; color: var(--text); line-height: 1.3; }
 .sug-secondary { font-size: 0.6875rem; color: var(--muted); margin-top: 2px; line-height: 1.3; }
 
+/* Browse by area toggle */
+.browse-toggle {
+  font-family: var(--font);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.01em;
+  align-self: flex-start;
+}
+.browse-toggle:hover { text-decoration: underline; }
+.browse-chevron { transition: transform .2s; flex-shrink: 0; }
+.browse-toggle.open .browse-chevron { transform: rotate(180deg); }
+
+/* Location browser panel */
+.location-browser {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.browser-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.browser-back {
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.browser-back:hover { text-decoration: underline; }
+
+.browser-crumb {
+  font-size: 0.6875rem;
+  color: var(--muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browser-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.browser-chip {
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 980px;
+  padding: 4px 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.browser-chip:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 /* Select */
 .select-wrap { position: relative; }
 

@@ -798,6 +798,70 @@ function buildModelSelect() {
   updateUnitCard();
 }
 
+// ── Location browser (region → county → city) ────────────────────────────────
+function initLocationBrowser() {
+  const toggle  = document.getElementById('browseToggle');
+  const browser = document.getElementById('locationBrowser');
+  const header  = document.getElementById('browserHeader');
+  const backBtn = document.getElementById('browserBack');
+  const crumb   = document.getElementById('browserCrumb');
+  const chips   = document.getElementById('browserChips');
+
+  let level = 0, selRegion = null, selCounty = null;
+
+  function render() {
+    chips.innerHTML = '';
+    if (level === 0) {
+      header.hidden = true;
+      CA_REGIONS.forEach(r => addChip(r.name, () => { selRegion = r; level = 1; render(); }));
+    } else if (level === 1) {
+      header.hidden = false;
+      crumb.textContent = selRegion.name;
+      selRegion.counties.forEach(c => addChip(c.name, () => { selCounty = c; level = 2; render(); }));
+    } else {
+      header.hidden = false;
+      crumb.textContent = `${selRegion.name} › ${selCounty.name}`;
+      selCounty.cities.forEach(city => addChip(city.name, () => {
+        map.setView([city.lat, city.lng], 15);
+        fetchParcel(city.lat, city.lng, false);
+        document.getElementById('addressSearch').value = `${city.name}, CA`;
+        setClearVisible(true);
+        close();
+      }));
+    }
+  }
+
+  function addChip(label, onClick) {
+    const btn = document.createElement('button');
+    btn.type      = 'button';
+    btn.className = 'browser-chip';
+    btn.textContent = label;
+    btn.addEventListener('click', onClick);
+    chips.appendChild(btn);
+  }
+
+  function close() {
+    browser.hidden = true;
+    toggle.classList.remove('open');
+    level = 0; selRegion = null; selCounty = null;
+  }
+
+  toggle.addEventListener('click', () => {
+    const opening = browser.hidden;
+    browser.hidden = !opening;
+    toggle.classList.toggle('open', opening);
+    if (opening) render();
+  });
+
+  backBtn.addEventListener('click', () => {
+    if (level === 2) { level = 1; selCounty = null; }
+    else             { level = 0; selRegion = null; }
+    render();
+  });
+
+  document.getElementById('addressSearch').addEventListener('focus', close);
+}
+
 // ── Map init ──────────────────────────────────────────────────────────────────
 (function init() {
   map = L.map('map', {
@@ -849,6 +913,7 @@ function buildModelSelect() {
 
   buildModelSelect();
   initSearch();
+  initLocationBrowser();
   document.getElementById('btnClear').addEventListener('click', removeADU);
 
   // Re-measure after layout settles (important on iOS where fixed elements
