@@ -631,6 +631,7 @@ function initAddressPanel() {
       btn.textContent = item.name;
       btn.addEventListener('mousedown', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         if (level === 0) {
           selRegion = item; level = 1; renderBrowse();
         } else if (level === 1) {
