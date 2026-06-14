@@ -63,15 +63,6 @@
           </div>
         </div>
 
-        <div class="lot-section" id="lotSection" hidden>
-          <div class="label">Parcel info</div>
-          <div class="info-list">
-            <div class="info-row"><span class="info-key">Address</span><span class="info-val" id="lotAddress">–</span></div>
-            <div class="info-row"><span class="info-key">Lot area</span><span class="info-val" id="lotArea">–</span></div>
-            <div class="info-row"><span class="info-key">APN</span><span class="info-val" id="lotAPN">–</span></div>
-          </div>
-        </div>
-
         <div class="sidebar-footer">
           <button class="btn-clear" id="btnClear" hidden>Remove unit</button>
         </div>
@@ -82,6 +73,17 @@
     <div class="map-wrap">
       <div id="map"></div>
       <div class="toast" id="toast">Click anywhere on the map to place your ADU</div>
+
+      <!-- Parcel info overlay (desktop only — hidden on mobile) -->
+      <div class="lot-section" id="lotSection" hidden>
+        <div class="label">Parcel info</div>
+        <div class="info-list">
+          <div class="info-row"><span class="info-key">Address</span><span class="info-val" id="lotAddress">–</span></div>
+          <div class="info-row"><span class="info-key">Lot area</span><span class="info-val" id="lotArea">–</span></div>
+          <div class="info-row"><span class="info-key">APN</span><span class="info-val" id="lotAPN">–</span></div>
+        </div>
+      </div>
+
       <a class="cta-btn" id="ctaBtn" href="#" target="_blank" rel="noopener" hidden>
         <span class="cta-label">Get started with</span>
         <span class="cta-model" id="ctaModel"></span>
