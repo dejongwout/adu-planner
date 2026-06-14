@@ -188,8 +188,10 @@ function removeADU() {
   aduImage?.remove();
   clearancePolygon?.remove();
   rotMarker?.remove();
-  aduPolygon = aduImage = clearancePolygon = rotMarker = aduState = null;
-  document.getElementById('btnClear').hidden = true;
+  parcelLayer?.remove();
+  aduPolygon = aduImage = clearancePolygon = rotMarker = aduState = parcelLayer = null;
+  document.getElementById('btnClear').hidden  = true;
+  document.getElementById('lotSection').hidden = true;
 }
 
 function placeADU(latlng, rotation = 0) {
@@ -314,6 +316,7 @@ function placeADU(latlng, rotation = 0) {
 async function fetchParcel(lat, lng) {
   parcelLayer?.remove();
   parcelLayer = null;
+  document.getElementById('lotSection').hidden = true;
 
   const PARCEL_URL = 'https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CA_State_Parcels/FeatureServer/0/query';
   const parcelParams = new URLSearchParams({
