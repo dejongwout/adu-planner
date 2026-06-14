@@ -8,6 +8,11 @@ let rotMarker        = null;
 let aduState         = null; // { center: L.LatLng, widthM, heightM, rotation }
 let parcelFetchTimer = null;
 let currentRates     = { lo: 2.50, hi: 3.50, label: null }; // $/sq ft/month
+let hoverParcelLayer = null;
+let hoverTimer       = null;
+let lastHoverKey     = '';
+
+const PARCEL_URL = 'https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CA_State_Parcels/FeatureServer/0/query';
 
 const CLEARANCE_M = 0.3048 * 4 * 2; // 4 ft each side → added to both width and height
 
@@ -503,7 +508,6 @@ async function fetchParcel(lat, lng, fitView = false) {
   parcelLayer = null;
   document.getElementById('lotSection').hidden = true;
 
-  const PARCEL_URL = 'https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CA_State_Parcels/FeatureServer/0/query';
   const parcelParams = new URLSearchParams({
     geometry:            `${lng},${lat}`,
     geometryType:        'esriGeometryPoint',
@@ -553,6 +557,35 @@ async function fetchParcel(lat, lng, fitView = false) {
   document.getElementById('lotArea').textContent    = [sqft, acres].filter(Boolean).join(' · ') || '–';
   document.getElementById('lotAPN').textContent     = p.PARCEL_APN || '–';
   document.getElementById('lotSection').hidden      = false;
+}
+
+// ── Parcel hover highlight ────────────────────────────────────────────────────
+async function showHoverParcel(lat, lng) {
+  const params = new URLSearchParams({
+    geometry:           `${lng},${lat}`,
+    geometryType:       'esriGeometryPoint',
+    inSR:               '4326',
+    spatialRel:         'esriSpatialRelIntersects',
+    outFields:          '',
+    outSR:              '4326',
+    maxAllowableOffset: '0',
+    f:                  'geojson',
+    resultRecordCount:  '1',
+  });
+  try {
+    const res     = await fetch(`${PARCEL_URL}?${params}`);
+    const data    = await res.json();
+    const feature = data?.features?.[0];
+    hoverParcelLayer?.remove();
+    hoverParcelLayer = null;
+    if (!feature) return;
+    const geom  = feature.geometry;
+    const rings = geom.type === 'MultiPolygon' ? geom.coordinates[0] : geom.coordinates;
+    hoverParcelLayer = L.polygon(
+      rings.map(ring => ring.map(([lo, la]) => [la, lo])),
+      { color: '#fff', weight: 1.5, opacity: 0.55, fill: false, interactive: false }
+    ).addTo(map);
+  } catch { /* silent */ }
 }
 
 // ── Address + location panel ──────────────────────────────────────────────────
@@ -1032,6 +1065,25 @@ function buildModelSelect() {
   map.on('click', (e) => {
     placeADU(e.latlng);
     fetchParcel(e.latlng.lat, e.latlng.lng, true);
+  });
+
+  map.on('mousemove', (e) => {
+    if (map.getZoom() < 15) return;
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => {
+      const { lat, lng } = e.latlng;
+      const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+      if (key === lastHoverKey) return;
+      lastHoverKey = key;
+      showHoverParcel(lat, lng);
+    }, 180);
+  });
+
+  map.on('mouseout', () => {
+    clearTimeout(hoverTimer);
+    hoverParcelLayer?.remove();
+    hoverParcelLayer = null;
+    lastHoverKey = '';
   });
 
   buildModelSelect();
