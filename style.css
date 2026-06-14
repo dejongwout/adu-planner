@@ -315,6 +315,37 @@ select:focus {
 .map-wrap { flex: 1; position: relative; overflow: hidden; }
 #map { width: 100%; height: 100%; }
 
+/* ── CTA button ─────────────────────────────────────────────────── */
+.cta-btn {
+  position: absolute;
+  bottom: 28px;
+  left: 28px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1d1d1f;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 12px 18px;
+  border-radius: 980px;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,.28);
+  transition: background .15s, transform .15s, box-shadow .15s;
+  white-space: nowrap;
+}
+
+.cta-btn:hover {
+  background: #000;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0,0,0,.36);
+}
+
+.cta-label { opacity: 0.7; font-weight: 400; }
+.cta-model { font-weight: 600; }
+
 /* ADU polygon cursor */
 .adu-poly { cursor: grab; }
 .adu-poly:active { cursor: grabbing; }
@@ -470,4 +501,7 @@ select:focus {
 
   /* Toast: always 16px above the bottom sheet (height set via JS --sheet-h) */
   .toast { top: auto; bottom: calc(var(--sheet-h, 300px) + 16px); transform: translateX(-50%); font-size: 0.8125rem; padding: 8px 18px; }
+
+  .cta-btn { bottom: calc(var(--sheet-h, 300px) + 16px); left: 50%; transform: translateX(-50%); font-size: 0.8125rem; padding: 11px 20px; }
+  .cta-btn:hover { transform: translateX(-50%) translateY(-1px); }
 }

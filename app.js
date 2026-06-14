@@ -183,6 +183,15 @@ function getModel() {
   return ADU_MODELS.find(m => m.id === id) || ADU_MODELS[0];
 }
 
+function updateCTA() {
+  const btn = document.getElementById('ctaBtn');
+  if (!aduState) { btn.hidden = true; return; }
+  const m = getModel();
+  btn.href = m.url || 'https://masayahomes.com';
+  document.getElementById('ctaModel').textContent = m.name;
+  btn.hidden = false;
+}
+
 function removeADU() {
   aduPolygon?.remove();
   aduImage?.remove();
@@ -190,8 +199,9 @@ function removeADU() {
   rotMarker?.remove();
   parcelLayer?.remove();
   aduPolygon = aduImage = clearancePolygon = rotMarker = aduState = parcelLayer = null;
-  document.getElementById('btnClear').hidden  = true;
+  document.getElementById('btnClear').hidden   = true;
   document.getElementById('lotSection').hidden = true;
+  updateCTA();
 }
 
 function placeADU(latlng, rotation = 0) {
@@ -310,6 +320,7 @@ function placeADU(latlng, rotation = 0) {
 
   document.getElementById('toast').classList.add('hidden');
   document.getElementById('btnClear').hidden = false;
+  updateCTA();
 }
 
 // ── Parcel lookup + rental rate (both run in parallel) ────────────────────────
@@ -480,6 +491,7 @@ function selectModel(id) {
   if (slide) slide.parentElement.scrollTo({ left: slide.offsetLeft - 18, behavior: 'smooth' });
   updateUnitCard();
   if (savedCenter) placeADU(savedCenter, savedRotation);
+  else updateCTA();
 }
 
 function buildModelSelect() {
@@ -542,6 +554,7 @@ function buildModelSelect() {
         sel.value = id;
         updateUnitCard();
         if (savedCenter) placeADU(savedCenter, savedRotation);
+        else updateCTA();
       }
     }, 80);
   }, { passive: true });
