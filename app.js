@@ -377,7 +377,7 @@ function updatePermitSection() {
       <li>
         <a class="permit-row" href="${item.url}" target="_blank" rel="noopener">
           <div class="permit-row-text">
-            <span class="permit-item-title">${item.title}</span>
+            <span class="permit-item-title${item.type === 'ok' ? ' permit-item-ok' : ''}">${item.title}</span>
             <span class="permit-item-detail">${item.detail}</span>
           </div>
           ${CHEVRON}
