@@ -360,7 +360,6 @@ function buildPermitItems(model, countyLabel) {
 }
 
 const CHEVRON = `<svg class="permit-chevron" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
-const ICONS = { required: '!', ok: '✓', warn: '!', info: 'i' };
 
 function updatePermitSection() {
   const section = document.getElementById('permitSection');
@@ -377,7 +376,6 @@ function updatePermitSection() {
     .map(item => `
       <li>
         <a class="permit-row" href="${item.url}" target="_blank" rel="noopener">
-          <div class="permit-icon ${item.type}">${ICONS[item.type]}</div>
           <div class="permit-row-text">
             <span class="permit-item-title">${item.title}</span>
             <span class="permit-item-detail">${item.detail}</span>

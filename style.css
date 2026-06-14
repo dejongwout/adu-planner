@@ -542,22 +542,6 @@ select:focus {
 }
 .permit-row:hover { background: var(--bg); }
 
-.permit-icon {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.5625rem;
-  font-weight: 700;
-}
-
-.permit-icon.required { background: #ff3b30; color: #fff; }
-.permit-icon.ok       { background: #34c759; color: #fff; }
-.permit-icon.warn     { background: #ff9f0a; color: #fff; }
-.permit-icon.info     { background: var(--bg); border: 1px solid var(--border); color: var(--muted); }
 
 .permit-row-text     { flex: 1; min-width: 0; }
 .permit-item-title   { display: block; font-size: 0.8125rem; font-weight: 500; color: var(--text); }
