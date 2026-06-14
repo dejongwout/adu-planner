@@ -498,7 +498,7 @@ function placeADU(latlng, rotation = 0) {
 }
 
 // ── Parcel lookup + rental rate (both run in parallel) ────────────────────────
-async function fetchParcel(lat, lng) {
+async function fetchParcel(lat, lng, fitView = false) {
   parcelLayer?.remove();
   parcelLayer = null;
   document.getElementById('lotSection').hidden = true;
@@ -541,6 +541,8 @@ async function fetchParcel(lat, lng) {
     { color: '#FFD60A', weight: 2.5, opacity: 1, fillColor: '#FFD60A', fillOpacity: 0.1, interactive: false }
   ).addTo(map);
 
+  if (fitView) map.fitBounds(parcelLayer.getBounds(), { padding: [60, 60], maxZoom: 21 });
+
   const p      = feature.properties || {};
   const areaM2 = p.Shape__Area || 0;
   const sqft   = areaM2 > 0 ? `${Math.round(areaM2 * 10.764).toLocaleString()} sq ft` : null;
@@ -580,7 +582,7 @@ function selectSuggestion(r) {
   highlightIdx   = -1;
   const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
   map.setView([lat, lon], 19);
-  fetchParcel(lat, lon);
+  fetchParcel(lat, lon, true);
 }
 
 function setClearVisible(visible) {
@@ -842,7 +844,7 @@ function buildModelSelect() {
 
   map.on('click', (e) => {
     placeADU(e.latlng);
-    fetchParcel(e.latlng.lat, e.latlng.lng);
+    fetchParcel(e.latlng.lat, e.latlng.lng, true);
   });
 
   buildModelSelect();
