@@ -180,6 +180,52 @@ select:focus {
 .rental-val      { font-size: 0.875rem; font-weight: 500; color: var(--text); }
 .rental-location { font-size: 0.5625rem; color: var(--muted); margin-top: 1px; }
 
+.rental-val-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rental-tip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.rental-tip-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 210px;
+  background: #1d1d1f;
+  color: #fff;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  padding: 8px 11px;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 200;
+}
+
+/* Small arrow pointing down */
+.rental-tip-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1d1d1f;
+}
+
+.rental-tip:hover .rental-tip-bubble { opacity: 1; }
+
 .badge {
   font-size: 0.6875rem;
   font-weight: 500;
