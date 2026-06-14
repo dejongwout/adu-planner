@@ -201,16 +201,19 @@ function updateCTA() {
   btn.hidden = false;
 }
 
-function removeADU() {
+function removeADU(keepParcel = false) {
   aduPolygon?.remove();
   aduImage?.remove();
   clearancePolygon?.remove();
   rotMarker?.remove();
-  parcelLayer?.remove();
-  aduPolygon = aduImage = clearancePolygon = rotMarker = aduState = parcelLayer = null;
-  document.getElementById('btnClear').hidden      = true;
-  document.getElementById('lotSection').hidden    = true;
-  document.getElementById('permitSection').hidden = true;
+  aduPolygon = aduImage = clearancePolygon = rotMarker = aduState = null;
+  if (!keepParcel) {
+    parcelLayer?.remove();
+    parcelLayer = null;
+    document.getElementById('btnClear').hidden      = true;
+    document.getElementById('lotSection').hidden    = true;
+    document.getElementById('permitSection').hidden = true;
+  }
   updateCTA();
 }
 
@@ -386,8 +389,8 @@ function updatePermitSection() {
   section.hidden = false;
 }
 
-function placeADU(latlng, rotation = 0) {
-  removeADU();
+function placeADU(latlng, rotation = 0, keepParcel = false) {
+  removeADU(keepParcel);
 
   const model   = getModel();
   const widthM  = ft2m(model.width);
@@ -948,7 +951,7 @@ function selectModel(id) {
   const slide = document.querySelector(`.slider-slide[data-id="${id}"]`);
   if (slide) slide.parentElement.scrollTo({ left: slide.offsetLeft - 18, behavior: 'smooth' });
   updateUnitCard();
-  if (savedCenter) placeADU(savedCenter, savedRotation);
+  if (savedCenter) placeADU(savedCenter, savedRotation, true);
   else updateCTA();
 }
 
