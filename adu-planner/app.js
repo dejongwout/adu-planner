@@ -555,16 +555,79 @@ async function fetchParcel(lat, lng) {
 
 // ── Address search (Nominatim) ────────────────────────────────────────────────
 let searchTimer;
+let highlightIdx = -1;
+
+function parseSuggestion(displayName) {
+  const parts  = displayName.split(', ');
+  const caIdx  = parts.findIndex(p => p === 'California');
+  if (caIdx < 0) return { primary: parts[0], secondary: parts.slice(1, 3).join(', ') };
+  const zip      = parts.find(p => /^\d{5}$/.test(p)) || '';
+  const cityIdx  = Math.max(0, caIdx - 2);
+  const city     = parts[cityIdx] || '';
+  const addrEnd  = Math.max(1, caIdx - 2);
+  const primary  = parts.slice(0, addrEnd).join(', ') || parts[0];
+  const secondary = [city !== primary ? city : '', zip ? `CA ${zip}` : 'CA'].filter(Boolean).join(', ');
+  return { primary, secondary };
+}
+
+function selectSuggestion(r) {
+  const input  = document.getElementById('addressSearch');
+  const listEl = document.getElementById('suggestions');
+  const { primary } = parseSuggestion(r.display_name);
+  input.value = primary;
+  setClearVisible(true);
+  listEl.hidden  = true;
+  highlightIdx   = -1;
+  const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+  map.setView([lat, lon], 19);
+  fetchParcel(lat, lon);
+}
+
+function setClearVisible(visible) {
+  document.getElementById('addressClear').hidden = !visible;
+}
 
 function initSearch() {
   const input  = document.getElementById('addressSearch');
   const listEl = document.getElementById('suggestions');
+  const clear  = document.getElementById('addressClear');
 
   input.addEventListener('input', () => {
     clearTimeout(searchTimer);
+    setClearVisible(input.value.length > 0);
+    highlightIdx = -1;
     const q = input.value.trim();
     if (q.length < 3) { listEl.hidden = true; return; }
     searchTimer = setTimeout(() => fetchSuggestions(q, listEl), 350);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    const items = listEl.querySelectorAll('li');
+    if (!items.length || listEl.hidden) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlightIdx = Math.min(highlightIdx + 1, items.length - 1);
+      items.forEach((li, i) => li.classList.toggle('highlighted', i === highlightIdx));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlightIdx = Math.max(highlightIdx - 1, -1);
+      items.forEach((li, i) => li.classList.toggle('highlighted', i === highlightIdx));
+    } else if (e.key === 'Enter' && highlightIdx >= 0) {
+      e.preventDefault();
+      items[highlightIdx].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    } else if (e.key === 'Escape') {
+      listEl.hidden = true;
+      highlightIdx  = -1;
+    }
+  });
+
+  clear.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    input.value    = '';
+    listEl.hidden  = true;
+    highlightIdx   = -1;
+    setClearVisible(false);
+    input.focus();
   });
 
   document.addEventListener('click', (e) => {
@@ -588,16 +651,10 @@ function renderSuggestions(results, listEl) {
   listEl.innerHTML = '';
   if (!results.length) { listEl.hidden = true; return; }
   results.forEach(r => {
+    const { primary, secondary } = parseSuggestion(r.display_name);
     const li = document.createElement('li');
-    li.textContent = r.display_name;
-    li.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
-      document.getElementById('addressSearch').value = r.display_name;
-      listEl.hidden = true;
-      map.setView([lat, lon], 19);
-      fetchParcel(lat, lon);
-    });
+    li.innerHTML = `<div class="sug-primary">${primary}</div><div class="sug-secondary">${secondary}</div>`;
+    li.addEventListener('mousedown', (e) => { e.preventDefault(); selectSuggestion(r); });
     listEl.appendChild(li);
   });
   listEl.hidden = false;
