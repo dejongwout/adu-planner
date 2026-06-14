@@ -176,12 +176,12 @@ select:focus {
   flex-direction: column;
   gap: 2px;
 }
-.rental-label    { font-size: 0.75rem; color: var(--muted); }
+.rental-label    { font-size: 0.6875rem; color: var(--muted); }
 .rental-val      { font-size: 0.875rem; font-weight: 500; color: var(--text); }
-.rental-location { font-size: 0.6875rem; color: var(--muted); margin-top: 1px; }
+.rental-location { font-size: 0.5625rem; color: var(--muted); margin-top: 1px; }
 
 .badge {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -236,7 +236,7 @@ select:focus {
   height: 20px;
   background: var(--accent);
   color: #fff;
-  font-size: 0.6875rem;
+  font-size: 0.5625rem;
   font-weight: 700;
   border-radius: 50%;
   display: flex;
