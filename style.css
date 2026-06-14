@@ -255,6 +255,48 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
   color: #fff;
 }
 
+.loc-street-wrap { padding: 4px 14px 6px; }
+
+.loc-browse-input {
+  font-family: var(--font);
+  font-size: 0.9375rem;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  -webkit-appearance: none;
+  color: var(--text);
+  transition: border-color .2s, box-shadow .2s;
+}
+.loc-browse-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0,113,227,.15);
+}
+
+.loc-number-wrap { padding: 4px 14px 6px; }
+.loc-number-row  { display: flex; gap: 7px; }
+.loc-number-row .loc-browse-input { flex: 1; }
+
+.loc-go-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s;
+}
+.loc-go-btn:hover { background: #005cbf; }
+
 @media (max-width: 768px) {
   /* On mobile: panel shows suggestions only (browse hidden — keyboard takes up space) */
   .loc-panel-browse  { display: none; }

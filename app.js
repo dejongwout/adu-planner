@@ -579,18 +579,25 @@ function initAddressPanel() {
   const suggList = document.getElementById('suggestions');
   const divider  = document.getElementById('locDivider');
   const clearBtn = document.getElementById('addressClear');
-  const backRow  = document.getElementById('locBackRow');
-  const backBtn  = document.getElementById('locBack');
+  const backRow    = document.getElementById('locBackRow');
+  const backBtn    = document.getElementById('locBack');
   const questionEl = document.getElementById('locQuestion');
   const answersEl  = document.getElementById('locAnswers');
+  const streetWrap = document.getElementById('locStreetWrap');
+  const streetInput= document.getElementById('locStreetInput');
+  const numberWrap = document.getElementById('locNumberWrap');
+  const numberInput= document.getElementById('locNumberInput');
+  const goBtn      = document.getElementById('locGoBtn');
 
-  let searchTimer, highlightIdx = -1;
-  let level = 0, selRegion = null, selCounty = null;
+  let searchTimer, streetTimer, highlightIdx = -1;
+  let level = 0, selRegion = null, selCounty = null, selCity = null, selStreet = null;
 
   const QUESTIONS = [
     () => 'Which area of California are you in?',
     () => `Which county in ${selRegion.name}?`,
     () => `Which city in ${selCounty.name} County?`,
+    () => `What street in ${selCity.name}?`,
+    () => `House number on ${selStreet}?`,
   ];
 
   function positionPanel() {
@@ -613,41 +620,102 @@ function initAddressPanel() {
     suggList.innerHTML = '';
     highlightIdx = -1;
     clearTimeout(searchTimer);
+    clearTimeout(streetTimer);
+    level = 0; selRegion = null; selCounty = null; selCity = null; selStreet = null;
   }
 
   function renderBrowse() {
     questionEl.textContent = QUESTIONS[level]();
-    backRow.hidden = level === 0;
+    backRow.hidden  = level === 0;
     answersEl.innerHTML = '';
+    streetWrap.hidden = level !== 3;
+    numberWrap.hidden = level !== 4;
 
-    const src   = level === 0 ? CA_REGIONS
-                : level === 1 ? selRegion.counties
-                : selCounty.cities;
-    const items = [...src].sort((a, b) => a.name.localeCompare(b.name));
-
-    items.forEach(item => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'loc-answer';
-      btn.textContent = item.name;
-      btn.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (level === 0) {
-          selRegion = item; level = 1; renderBrowse();
-        } else if (level === 1) {
-          selCounty = item; level = 2; renderBrowse();
-        } else {
-          input.value = `${item.name}, CA`;
-          setClearVisible(true);
-          map.setView([item.lat, item.lng], 15);
-          fetchParcel(item.lat, item.lng, false);
-          closePanel();
-          input.blur();
-        }
+    if (level <= 2) {
+      const src   = level === 0 ? CA_REGIONS
+                  : level === 1 ? selRegion.counties
+                  : selCounty.cities;
+      const items = [...src].sort((a, b) => a.name.localeCompare(b.name));
+      items.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'loc-answer';
+        btn.textContent = item.name;
+        btn.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (level === 0) {
+            selRegion = item; level = 1; renderBrowse();
+          } else if (level === 1) {
+            selCounty = item; level = 2; renderBrowse();
+          } else {
+            selCity = item;
+            input.value = `${item.name}, CA`;
+            setClearVisible(true);
+            map.setView([item.lat, item.lng], 14);
+            fetchParcel(item.lat, item.lng, false);
+            level = 3;
+            renderBrowse();
+          }
+        });
+        answersEl.appendChild(btn);
       });
-      answersEl.appendChild(btn);
+    } else if (level === 3) {
+      streetInput.value = '';
+      requestAnimationFrame(() => streetInput.focus());
+    } else {
+      numberInput.value = '';
+      requestAnimationFrame(() => numberInput.focus());
+    }
+  }
+
+  async function loadStreets(q) {
+    const params = new URLSearchParams({
+      q: `${q}, ${selCity.name}, CA`,
+      format: 'json', limit: 8, countrycodes: 'us', addressdetails: 1,
     });
+    try {
+      const res     = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
+      const results = await res.json();
+      const streets = [...new Set(results.map(r => r.address?.road).filter(Boolean))].sort();
+      answersEl.innerHTML = '';
+      streets.forEach(street => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'loc-answer';
+        btn.textContent = street;
+        btn.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          selStreet = street;
+          level = 4;
+          renderBrowse();
+        });
+        answersEl.appendChild(btn);
+      });
+    } catch { /* silent */ }
+  }
+
+  async function submitAddress() {
+    const num = numberInput.value.trim();
+    if (!num) return;
+    const params = new URLSearchParams({
+      q: `${num} ${selStreet}, ${selCity.name}, CA`,
+      format: 'json', limit: 1, countrycodes: 'us',
+    });
+    try {
+      const res     = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
+      const results = await res.json();
+      if (results[0]) {
+        const lat = parseFloat(results[0].lat), lon = parseFloat(results[0].lon);
+        input.value = parseSuggestion(results[0].display_name).primary;
+        setClearVisible(true);
+        map.setView([lat, lon], 19);
+        fetchParcel(lat, lon, true);
+      }
+    } catch { /* silent */ }
+    closePanel();
+    input.blur();
   }
 
   async function loadSuggestions(q) {
@@ -725,7 +793,9 @@ function initAddressPanel() {
   });
 
   input.addEventListener('blur', () => {
-    setTimeout(() => { if (!panel.hidden) closePanel(); }, 200);
+    setTimeout(() => {
+      if (!panel.hidden && !panel.contains(document.activeElement)) closePanel();
+    }, 200);
   });
 
   clearBtn.addEventListener('mousedown', (e) => {
@@ -743,9 +813,29 @@ function initAddressPanel() {
 
   backBtn.addEventListener('mousedown', (e) => {
     e.preventDefault();
-    if (level === 2) { level = 1; selCounty = null; }
-    else             { level = 0; selRegion = null; }
+    if      (level === 4) { level = 3; selStreet = null; }
+    else if (level === 3) { level = 2; selCity   = null; }
+    else if (level === 2) { level = 1; selCounty = null; }
+    else                  { level = 0; selRegion = null; }
     renderBrowse();
+  });
+
+  streetInput.addEventListener('input', () => {
+    clearTimeout(streetTimer);
+    answersEl.innerHTML = '';
+    const q = streetInput.value.trim();
+    if (q.length < 2) return;
+    streetTimer = setTimeout(() => loadStreets(q), 350);
+  });
+
+  numberInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitAddress();
+  });
+
+  goBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    submitAddress();
   });
 
   document.addEventListener('mousedown', (e) => {
