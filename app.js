@@ -206,34 +206,91 @@ function removeADU() {
 }
 
 // ── Permit overview ───────────────────────────────────────────────────────────
+const COUNTY_BUILDING_DEPTS = {
+  'San Francisco': 'https://sfdbi.org',
+  'Los Angeles':   'https://ladbs.org',
+  'San Diego':     'https://www.sandiegocounty.gov/pds/building.html',
+  'Orange':        'https://www.ocpw.com/1302/Building-Services',
+  'Santa Clara':   'https://www.sccgov.org/sites/dpd/building/Pages/building.aspx',
+  'Alameda':       'https://acgov.org/pwa/building.htm',
+  'Contra Costa':  'https://www.contracosta.ca.gov/5700/Building-Inspection',
+  'Sacramento':    'https://www.saccounty.gov/Government/Government-Agencies/Building',
+  'Riverside':     'https://rctlma.org/bldg/',
+  'San Bernardino':'https://www.sbcounty.gov/lus/building/',
+  'Ventura':       'https://www.ventura.org/resource-management/planning/',
+  'San Mateo':     'https://cdd.smcgov.org/building-and-safety',
+  'Fresno':        'https://www.fresnocountyca.gov/Departments/Public-Works-Planning',
+  'Kern':          'https://kernplanning.com/building',
+  'Marin':         'https://www.marincounty.org/depts/cd/divisions/building',
+  'Sonoma':        'https://sonomacounty.ca.gov/prmd/building/',
+  'Santa Barbara': 'https://www.countyofsb.org/pland',
+  'Monterey':      'https://www.co.monterey.ca.us/government/departments-a-h/rma/building-services',
+  'Napa':          'https://www.countyofnapa.org/295/Building-Official',
+  'Placer':        'https://www.placer.ca.gov/2282/Building',
+  'Solano':        'https://www.solanocounty.com/depts/rm/building/',
+  'San Luis Obispo':'https://www.slocounty.ca.gov/Departments/Planning-Building/Building.aspx',
+  'Santa Cruz':    'https://www.sccoplanning.com/PlanningHome/Building.aspx',
+  'Yolo':          'https://www.yolocounty.org/community-services/community-services-departments/environmental-health/building-and-planning',
+  'El Dorado':     'https://www.edcgov.us/Government/bps',
+  'Nevada':        'https://www.mynevadacounty.com/228/Building-Department',
+  'Humboldt':      'https://humboldtgov.org/143/Building-Division',
+  'Mendocino':     'https://www.mendocinocounty.org/government/planning-building-services',
+  'Shasta':        'https://www.co.shasta.ca.us/index/dpw/bld',
+  'San Joaquin':   'https://www.sjgov.org/department/bds',
+  'Stanislaus':    'https://www.stancounty.com/planning/building.shtm',
+  'Tulare':        'https://www.tularecountyworks.org/building/',
+  'Merced':        'https://www.co.merced.ca.us/342/Building-Safety',
+  'Lake':          'https://www.lakecountyca.gov/Government/Directory/Community_Development/Building_Services.htm',
+};
+
+const HCD_ADU = 'https://www.hcd.ca.gov/policy-and-research/accessory-dwelling-units';
+
 function buildPermitItems(model, countyLabel) {
-  const dept = countyLabel ? `${countyLabel} County Building Dept.` : 'your local building dept.';
+  const deptUrl = (countyLabel && COUNTY_BUILDING_DEPTS[countyLabel]) || HCD_ADU;
+  const deptLabel = countyLabel ? `${countyLabel} County Building Dept` : 'CA HCD — ADU overview';
   return [
     {
       type:   'required',
       title:  'Building Permit',
-      detail: `Required — issued by ${dept}`,
+      detail: `Required — ${deptLabel}`,
+      url:    deptUrl,
     },
     {
       type:   'ok',
       title:  'Ministerial approval',
-      detail: 'No public hearing or discretionary review under CA state law.',
+      detail: 'No public hearing or discretionary review (CA state law)',
+      url:    HCD_ADU,
     },
     model.living <= 800
-      ? { type: 'ok',   title: 'Impact fees waived',    detail: 'ADUs ≤ 800 sq ft are exempt from most impact fees (SB 13).' }
-      : { type: 'warn', title: 'Impact fees may apply', detail: 'Units > 800 sq ft may incur school, utility & park fees.' },
+      ? {
+          type:   'ok',
+          title:  'Impact fees waived',
+          detail: 'ADUs ≤ 800 sq ft exempt from most impact fees — SB 13',
+          url:    'https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201920200SB13',
+        }
+      : {
+          type:   'warn',
+          title:  'Impact fees may apply',
+          detail: 'Units > 800 sq ft may incur school, utility & park fees — SB 13',
+          url:    'https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201920200SB13',
+        },
     {
       type:   'info',
       title:  'Fire sprinklers',
-      detail: 'Only required if the primary residence already has them.',
+      detail: 'Required only if the primary residence already has them',
+      url:    HCD_ADU,
     },
     {
       type:   'ok',
       title:  'No owner-occupancy required',
-      detail: 'State law removed this requirement through at least 2025.',
+      detail: 'State removed this requirement (AB 3182)',
+      url:    'https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201920200AB3182',
     },
   ];
 }
+
+const CHEVRON = `<svg class="permit-chevron" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
+const ICONS = { required: '!', ok: '✓', warn: '!', info: 'i' };
 
 function updatePermitSection() {
   const section = document.getElementById('permitSection');
@@ -246,15 +303,17 @@ function updatePermitSection() {
     [countyLabel ? `${countyLabel} County` : null, model.living ? `${model.living} sq ft` : null]
       .filter(Boolean).join(' · ');
 
-  const icons = { required: '!', ok: '✓', warn: '!', info: 'i' };
   document.getElementById('permitList').innerHTML = buildPermitItems(model, countyLabel)
     .map(item => `
-      <li class="permit-item">
-        <div class="permit-icon ${item.type}">${icons[item.type]}</div>
-        <div>
-          <span class="permit-item-title">${item.title}</span>
-          <span class="permit-item-detail"> — ${item.detail}</span>
-        </div>
+      <li>
+        <a class="permit-row" href="${item.url}" target="_blank" rel="noopener">
+          <div class="permit-icon ${item.type}">${ICONS[item.type]}</div>
+          <div class="permit-row-text">
+            <span class="permit-item-title">${item.title}</span>
+            <span class="permit-item-detail">${item.detail}</span>
+          </div>
+          ${CHEVRON}
+        </a>
       </li>`).join('');
 
   section.hidden = false;
