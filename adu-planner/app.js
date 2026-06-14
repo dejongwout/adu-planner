@@ -246,45 +246,103 @@ const COUNTY_BUILDING_DEPTS = {
 const HCD_ADU = 'https://www.hcd.ca.gov/policy-and-research/accessory-dwelling-units';
 
 function buildPermitItems(model, countyLabel) {
-  const deptUrl = (countyLabel && COUNTY_BUILDING_DEPTS[countyLabel]) || HCD_ADU;
+  const deptUrl   = (countyLabel && COUNTY_BUILDING_DEPTS[countyLabel]) || HCD_ADU;
   const deptLabel = countyLabel ? `${countyLabel} County Building Dept` : 'CA HCD — ADU overview';
+  const SB13      = 'https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201920200SB13';
+  const AB3182    = 'https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201920200AB3182';
+  const TITLE24   = 'https://www.energy.ca.gov/programs-and-topics/programs/building-energy-efficiency-standards';
+  const COASTAL   = 'https://www.coastal.ca.gov/adu/';
+  const CBC       = 'https://www.dgs.ca.gov/BSC/Codes';
+
   return [
+    // ── Required permits ──
     {
       type:   'required',
       title:  'Building Permit',
-      detail: `Required — ${deptLabel}`,
+      detail: `Master permit covering structure, site work, and inspections — ${deptLabel}`,
       url:    deptUrl,
     },
     {
+      type:   'required',
+      title:  'Electrical Permit',
+      detail: 'Sub-permit for all new wiring, panel work, and service connections',
+      url:    deptUrl,
+    },
+    {
+      type:   'required',
+      title:  'Plumbing Permit',
+      detail: 'Sub-permit for kitchen, bathroom, and utility drain/supply lines',
+      url:    deptUrl,
+    },
+    {
+      type:   'required',
+      title:  'Mechanical Permit',
+      detail: 'Sub-permit for HVAC, ventilation, and mini-split systems',
+      url:    deptUrl,
+    },
+    // ── Pre-construction ──
+    {
+      type:   'info',
+      title:  'Zoning Verification',
+      detail: 'Confirm ADU is permitted in your parcel\'s zoning district before applying',
+      url:    HCD_ADU,
+    },
+    {
+      type:   'warn',
+      title:  'Utility Connection Fees',
+      detail: 'Water and sewer hookup fees are typically owed even when impact fees are waived',
+      url:    HCD_ADU,
+    },
+    // ── Compliance ──
+    {
+      type:   'required',
+      title:  'Title 24 Energy Compliance',
+      detail: 'CalGreen energy code — solar panels required on most new detached ADUs',
+      url:    TITLE24,
+    },
+    {
+      type:   'required',
+      title:  'Smoke & CO Detector Inspection',
+      detail: 'Hard-wired detectors with battery backup required in every sleeping area',
+      url:    CBC,
+    },
+    // ── State law items ──
+    {
       type:   'ok',
       title:  'Ministerial approval',
-      detail: 'No public hearing or discretionary review (CA state law)',
+      detail: 'No public hearing or discretionary review required (CA state law)',
       url:    HCD_ADU,
     },
     model.living <= 800
       ? {
           type:   'ok',
           title:  'Impact fees waived',
-          detail: 'ADUs ≤ 800 sq ft exempt from most impact fees — SB 13',
-          url:    'https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201920200SB13',
+          detail: 'ADUs ≤ 800 sq ft are exempt from most development impact fees — SB 13',
+          url:    SB13,
         }
       : {
           type:   'warn',
           title:  'Impact fees may apply',
-          detail: 'Units > 800 sq ft may incur school, utility & park fees — SB 13',
-          url:    'https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201920200SB13',
+          detail: 'Units > 800 sq ft may incur school, park, and utility impact fees — SB 13',
+          url:    SB13,
         },
     {
       type:   'info',
       title:  'Fire sprinklers',
-      detail: 'Required only if the primary residence already has them',
+      detail: 'Only required if the primary residence already has a sprinkler system',
       url:    HCD_ADU,
+    },
+    {
+      type:   'info',
+      title:  'Coastal Development Permit',
+      detail: 'Additional permit required if parcel falls within the California Coastal Zone',
+      url:    COASTAL,
     },
     {
       type:   'ok',
       title:  'No owner-occupancy required',
-      detail: 'State removed this requirement (AB 3182)',
-      url:    'https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201920200AB3182',
+      detail: 'State removed this restriction — unit can be fully rented out (AB 3182)',
+      url:    AB3182,
     },
   ];
 }
