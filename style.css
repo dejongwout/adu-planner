@@ -192,10 +192,13 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
 }
 
 .loc-panel-browse {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  flex-shrink: 0;
   padding-bottom: 12px;
+  scrollbar-width: none;
 }
+.loc-panel-browse::-webkit-scrollbar { display: none; }
 
 .loc-back-row {
   padding: 10px 14px 2px;
