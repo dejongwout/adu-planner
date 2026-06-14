@@ -254,8 +254,7 @@ html, body { height: 100%; font-family: var(--font); -webkit-font-smoothing: ant
   transition: background .12s, color .12s;
 }
 .loc-answer:hover {
-  background: var(--accent);
-  color: #fff;
+  background: var(--border);
 }
 
 .loc-street-wrap { padding: 4px 14px 6px; }
