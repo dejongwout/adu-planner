@@ -4,18 +4,56 @@ const REGRID_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJyZWdyaWQuY29tIiwiaWF0IjoxN
 
 // ── ADU Models ────────────────────────────────────────────────────────────────
 // width × depth = total footprint in feet.
-// living = interior sq ft (optional, shown in the sidebar card).
-// imageUrl = top-down floor plan image (optional; falls back to blue rectangle).
+// living = interior sq ft (shown in card + used for rental estimate).
+// imageUrl = top-down floor plan (optional).
 const ADU_MODELS = [
   {
-    id:       'studio-300',
-    name:     'Studio 300',
-    width:    25,   // long dimension (ft)
-    depth:    16,   // short dimension: 12 ft living + 4 ft deck
-    living:   300,
-    imageUrl: 'https://framerusercontent.com/images/AwLmr6xFst4p8ceSnR3JoGeP4Ng.webp',
+    id:     's-studio',
+    name:   'S Studio',
+    width:  16,
+    depth:  18,
+    living: 250,
   },
-  { id: '1bed-600',   name: '1 Bed 600',  width: 20, depth: 30, living: 600  },
-  { id: '2bed-800',   name: '2 Bed 800',  width: 25, depth: 32, living: 800  },
-  { id: '2bed-1000',  name: '2 Bed 1000', width: 28, depth: 36, living: 1000 },
+  {
+    id:     's-1bed',
+    name:   'S One Bedroom',
+    width:  18,
+    depth:  22,
+    living: 340,
+  },
+  {
+    id:     's-1bed-plus',
+    name:   'S One Bedroom+',
+    width:  20,
+    depth:  24,
+    living: 420,
+  },
+  {
+    id:     'm-1bed',
+    name:   'M One Bedroom',
+    width:  20,
+    depth:  28,
+    living: 490,
+  },
+  {
+    id:     'm-1bed-plus',
+    name:   'M One Bedroom+',
+    width:  22,
+    depth:  30,
+    living: 580,
+  },
+  {
+    id:     'l-1bed',
+    name:   'L One Bedroom',
+    width:  24,
+    depth:  32,
+    living: 680,
+  },
+  {
+    id:     'l-2bed',
+    name:   'L Two Bedroom',
+    width:  28,
+    depth:  36,
+    living: 900,
+  },
 ];
