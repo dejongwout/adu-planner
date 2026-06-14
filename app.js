@@ -555,9 +555,10 @@ async function fetchParcel(lat, lng, fitView = false) {
   document.getElementById('lotSection').hidden      = false;
 }
 
-// ── Address search (Nominatim) ────────────────────────────────────────────────
-let searchTimer;
-let highlightIdx = -1;
+// ── Address + location panel ──────────────────────────────────────────────────
+function setClearVisible(visible) {
+  document.getElementById('addressClear').hidden = !visible;
+}
 
 function parseSuggestion(displayName) {
   const parts  = displayName.split(', ');
@@ -572,40 +573,138 @@ function parseSuggestion(displayName) {
   return { primary, secondary };
 }
 
-function selectSuggestion(r) {
-  const input  = document.getElementById('addressSearch');
-  const listEl = document.getElementById('suggestions');
-  const { primary } = parseSuggestion(r.display_name);
-  input.value = primary;
-  setClearVisible(true);
-  listEl.hidden  = true;
-  highlightIdx   = -1;
-  const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
-  map.setView([lat, lon], 19);
-  fetchParcel(lat, lon, true);
-}
+function initAddressPanel() {
+  const input    = document.getElementById('addressSearch');
+  const panel    = document.getElementById('locPanel');
+  const suggList = document.getElementById('suggestions');
+  const divider  = document.getElementById('locDivider');
+  const clearBtn = document.getElementById('addressClear');
+  const backRow  = document.getElementById('locBackRow');
+  const backBtn  = document.getElementById('locBack');
+  const questionEl = document.getElementById('locQuestion');
+  const answersEl  = document.getElementById('locAnswers');
 
-function setClearVisible(visible) {
-  document.getElementById('addressClear').hidden = !visible;
-}
+  let searchTimer, highlightIdx = -1;
+  let level = 0, selRegion = null, selCounty = null;
 
-function initSearch() {
-  const input  = document.getElementById('addressSearch');
-  const listEl = document.getElementById('suggestions');
-  const clear  = document.getElementById('addressClear');
+  const QUESTIONS = [
+    () => 'Which area of California are you in?',
+    () => `Which county in ${selRegion.name}?`,
+    () => `Which city in ${selCounty.name} County?`,
+  ];
+
+  function positionPanel() {
+    const rect = input.getBoundingClientRect();
+    panel.style.top   = `${rect.bottom + 6}px`;
+    panel.style.left  = `${rect.left}px`;
+    panel.style.width = `${rect.width}px`;
+  }
+
+  function openPanel() {
+    positionPanel();
+    panel.hidden = false;
+    renderBrowse();
+  }
+
+  function closePanel() {
+    panel.hidden    = true;
+    suggList.hidden = true;
+    divider.hidden  = true;
+    suggList.innerHTML = '';
+    highlightIdx = -1;
+    clearTimeout(searchTimer);
+  }
+
+  function renderBrowse() {
+    questionEl.textContent = QUESTIONS[level]();
+    backRow.hidden = level === 0;
+    answersEl.innerHTML = '';
+
+    const items = level === 0 ? CA_REGIONS
+                : level === 1 ? selRegion.counties
+                : selCounty.cities;
+
+    items.forEach(item => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'loc-answer';
+      btn.textContent = item.name;
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        if (level === 0) {
+          selRegion = item; level = 1; renderBrowse();
+        } else if (level === 1) {
+          selCounty = item; level = 2; renderBrowse();
+        } else {
+          input.value = `${item.name}, CA`;
+          setClearVisible(true);
+          map.setView([item.lat, item.lng], 15);
+          fetchParcel(item.lat, item.lng, false);
+          closePanel();
+          input.blur();
+        }
+      });
+      answersEl.appendChild(btn);
+    });
+  }
+
+  async function loadSuggestions(q) {
+    const params = new URLSearchParams({
+      q, format: 'json', limit: 5, countrycodes: 'us',
+      viewbox: '-124.5,42.0,-114.1,32.5', bounded: 0,
+    });
+    try {
+      const res     = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
+      const results = await res.json();
+      suggList.innerHTML = '';
+      if (!results.length) { suggList.hidden = true; divider.hidden = true; return; }
+      results.forEach(r => {
+        const { primary, secondary } = parseSuggestion(r.display_name);
+        const li = document.createElement('li');
+        li.innerHTML = `<div class="sug-primary">${primary}</div><div class="sug-secondary">${secondary}</div>`;
+        li.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          input.value = parseSuggestion(r.display_name).primary;
+          setClearVisible(true);
+          const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+          map.setView([lat, lon], 19);
+          fetchParcel(lat, lon, true);
+          closePanel();
+          input.blur();
+        });
+        suggList.appendChild(li);
+      });
+      suggList.hidden = false;
+      divider.hidden  = false;
+    } catch {
+      suggList.hidden = true;
+      divider.hidden  = true;
+    }
+  }
+
+  input.addEventListener('focus', openPanel);
 
   input.addEventListener('input', () => {
     clearTimeout(searchTimer);
     setClearVisible(input.value.length > 0);
     highlightIdx = -1;
     const q = input.value.trim();
-    if (q.length < 3) { listEl.hidden = true; return; }
-    searchTimer = setTimeout(() => fetchSuggestions(q, listEl), 350);
+    if (q.length < 3) {
+      suggList.hidden = true;
+      divider.hidden  = true;
+      suggList.innerHTML = '';
+      return;
+    }
+    searchTimer = setTimeout(() => loadSuggestions(q), 350);
   });
 
   input.addEventListener('keydown', (e) => {
-    const items = listEl.querySelectorAll('li');
-    if (!items.length || listEl.hidden) return;
+    if (panel.hidden) return;
+    const items = suggList.querySelectorAll('li');
+    if (!items.length || suggList.hidden) {
+      if (e.key === 'Escape') { closePanel(); input.blur(); }
+      return;
+    }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       highlightIdx = Math.min(highlightIdx + 1, items.length - 1);
@@ -618,48 +717,43 @@ function initSearch() {
       e.preventDefault();
       items[highlightIdx].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     } else if (e.key === 'Escape') {
-      listEl.hidden = true;
-      highlightIdx  = -1;
+      closePanel();
+      input.blur();
     }
   });
 
-  clear.addEventListener('mousedown', (e) => {
+  input.addEventListener('blur', () => {
+    setTimeout(() => { if (!panel.hidden) closePanel(); }, 200);
+  });
+
+  clearBtn.addEventListener('mousedown', (e) => {
     e.preventDefault();
-    input.value    = '';
-    listEl.hidden  = true;
-    highlightIdx   = -1;
+    input.value = '';
     setClearVisible(false);
+    suggList.hidden = true;
+    divider.hidden  = true;
+    suggList.innerHTML = '';
+    highlightIdx = -1;
+    clearTimeout(searchTimer);
     input.focus();
+    renderBrowse();
   });
 
-  document.addEventListener('click', (e) => {
-    if (!input.parentElement.contains(e.target)) listEl.hidden = true;
+  backBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    if (level === 2) { level = 1; selCounty = null; }
+    else             { level = 0; selRegion = null; }
+    renderBrowse();
   });
-}
 
-async function fetchSuggestions(query, listEl, onSelect) {
-  const params = new URLSearchParams({
-    q: query, format: 'json', limit: 5, countrycodes: 'us',
-    viewbox: '-124.5,42.0,-114.1,32.5', bounded: 0,
+  document.addEventListener('mousedown', (e) => {
+    if (panel.hidden) return;
+    if (!panel.contains(e.target) && e.target !== input && !clearBtn.contains(e.target)) {
+      closePanel();
+    }
   });
-  try {
-    const res     = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
-    const results = await res.json();
-    renderSuggestions(results, listEl, onSelect);
-  } catch { listEl.hidden = true; }
-}
 
-function renderSuggestions(results, listEl, onSelect) {
-  listEl.innerHTML = '';
-  if (!results.length) { listEl.hidden = true; return; }
-  results.forEach(r => {
-    const { primary, secondary } = parseSuggestion(r.display_name);
-    const li = document.createElement('li');
-    li.innerHTML = `<div class="sug-primary">${primary}</div><div class="sug-secondary">${secondary}</div>`;
-    li.addEventListener('mousedown', (e) => { e.preventDefault(); (onSelect || selectSuggestion)(r); });
-    listEl.appendChild(li);
-  });
-  listEl.hidden = false;
+  window.addEventListener('resize', () => { if (!panel.hidden) positionPanel(); });
 }
 
 // ── UI ────────────────────────────────────────────────────────────────────────
@@ -798,83 +892,6 @@ function buildModelSelect() {
   updateUnitCard();
 }
 
-// ── Location picker modal ─────────────────────────────────────────────────────
-function initLocModal() {
-  const trigger    = document.getElementById('locTrigger');
-  const backdrop   = document.getElementById('locBackdrop');
-  const modal      = document.getElementById('locModal');
-  const closeBtn   = document.getElementById('locClose');
-  const backBtn    = document.getElementById('locBack');
-  const questionEl = document.getElementById('locQuestion');
-  const answersEl  = document.getElementById('locAnswers');
-
-  let level = 0, selRegion = null, selCounty = null;
-
-  const QUESTIONS = [
-    () => 'Which area of California are you in?',
-    () => `Which county in ${selRegion.name}?`,
-    () => `Which city in ${selCounty.name} County?`,
-  ];
-
-  function open() {
-    level = 0; selRegion = null; selCounty = null;
-    modal.hidden    = false;
-    backdrop.hidden = false;
-    renderStep();
-  }
-
-  function close() {
-    modal.hidden    = true;
-    backdrop.hidden = true;
-    level = 0; selRegion = null; selCounty = null;
-  }
-
-  function renderStep() {
-    questionEl.textContent = QUESTIONS[level]();
-    backBtn.hidden = level === 0;
-    answersEl.innerHTML = '';
-
-    const items = level === 0 ? CA_REGIONS
-                : level === 1 ? selRegion.counties
-                : selCounty.cities;
-
-    items.forEach(item => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'loc-answer';
-      btn.textContent = item.name;
-      btn.addEventListener('click', () => {
-        if (level === 0) {
-          selRegion = item; level = 1; renderStep();
-        } else if (level === 1) {
-          selCounty = item; level = 2; renderStep();
-        } else {
-          const mainInput = document.getElementById('addressSearch');
-          map.setView([item.lat, item.lng], 15);
-          fetchParcel(item.lat, item.lng, false);
-          mainInput.value = `${item.name}, CA`;
-          setClearVisible(true);
-          close();
-        }
-      });
-      answersEl.appendChild(btn);
-    });
-  }
-
-  trigger.addEventListener('click', open);
-  backdrop.addEventListener('click', close);
-  closeBtn.addEventListener('click', close);
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !modal.hidden) close();
-  });
-
-  backBtn.addEventListener('click', () => {
-    if (level === 2) { level = 1; selCounty = null; }
-    else             { level = 0; selRegion = null; }
-    renderStep();
-  });
-}
 
 // ── Map init ──────────────────────────────────────────────────────────────────
 (function init() {
@@ -926,8 +943,7 @@ function initLocModal() {
   });
 
   buildModelSelect();
-  initSearch();
-  initLocModal();
+  initAddressPanel();
   document.getElementById('btnClear').addEventListener('click', removeADU);
 
   // Re-measure after layout settles (important on iOS where fixed elements
