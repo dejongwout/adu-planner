@@ -831,7 +831,7 @@ function buildModelSelect() {
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude: lat, longitude: lng } = pos.coords;
       const inCA = lat >= 32.5 && lat <= 42.0 && lng >= -124.5 && lng <= -114.1;
-      if (!inCA) return;
+      if (!inCA) { map.setZoom(map.getZoom() - 1); return; }
       map.setView([lat, lng], 16);
       try {
         const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
@@ -839,7 +839,7 @@ function buildModelSelect() {
         const addr = data?.display_name || '';
         if (addr) document.getElementById('addressSearch').value = addr;
       } catch { /* silent */ }
-    });
+    }, () => { map.setZoom(map.getZoom() - 1); });
   }
 
   map.on('click', (e) => {
