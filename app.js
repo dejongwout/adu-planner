@@ -1038,6 +1038,13 @@ function buildModelSelect() {
   map.getPane('floorplanPane').style.zIndex       = 399;
   map.getPane('floorplanPane').style.pointerEvents = 'none';
 
+  // Minimal basemap — CartoDB Positron (hidden until grid mode)
+  const tileMinimal = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    { maxZoom: 23, maxNativeZoom: 20, subdomains: 'abcd', opacity: 0,
+      attribution: '&copy; <a href="https://carto.com">CARTO</a>' }
+  ).addTo(map);
+
   // Satellite imagery (Esri — free, no key)
   const tileImagery = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -1047,8 +1054,8 @@ function buildModelSelect() {
     }
   ).addTo(map);
 
-  // Labels — always shown for orientation
-  L.tileLayer(
+  // Labels — shown in satellite mode only (CartoDB Positron has its own)
+  const tileLabels = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 23, maxNativeZoom: 20 }
   ).addTo(map);
@@ -1076,7 +1083,7 @@ function buildModelSelect() {
       const geojson = await res.json();
       if (!gridParcelLayer) {
         gridParcelLayer = L.geoJSON(null, {
-          style: { color: '#fff', weight: 1, opacity: 0.6, fill: false, interactive: false }
+          style: { color: '#4a7ab5', weight: 1.2, opacity: 0.7, fill: false, interactive: false }
         }).addTo(map);
       }
       gridParcelLayer.clearLayers();
@@ -1089,7 +1096,9 @@ function buildModelSelect() {
   function toggleMapStyle() {
     mapStyle = mapStyle === 'satellite' ? 'grid' : 'satellite';
     const isGrid = mapStyle === 'grid';
-    tileImagery.setOpacity(isGrid ? 0.28 : 1);
+    tileMinimal.setOpacity(isGrid ? 1 : 0);
+    tileImagery.setOpacity(isGrid ? 0 : 1);
+    tileLabels.setOpacity(isGrid ? 0 : 1);
     if (isGrid) {
       refreshGridParcels();
     } else {
