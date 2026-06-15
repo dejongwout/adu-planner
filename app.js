@@ -11,6 +11,8 @@ let currentRates     = { lo: 2.50, hi: 3.50, label: null }; // $/sq ft/month
 let hoverParcelLayer = null;
 let hoverTimer       = null;
 let lastHoverKey     = '';
+let gridParcelLayer  = null;
+let gridRefreshTimer = null;
 
 const PARCEL_URL = 'https://services2.arcgis.com/zr3KAIbsRSUyARHG/arcgis/rest/services/CA_State_Parcels/FeatureServer/0/query';
 
@@ -1045,32 +1047,67 @@ function buildModelSelect() {
     }
   ).addTo(map);
 
-  // Light Gray Reference overlay — parcel/lot outlines + labels (used in grid mode)
-  const tileGrid = L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 23, maxNativeZoom: 22, opacity: 0 }
-  ).addTo(map);
-
-  // Labels on top of satellite (hidden in grid mode — tileGrid has its own)
-  const tileLabels = L.tileLayer(
+  // Labels — always shown for orientation
+  L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 23, maxNativeZoom: 20 }
   ).addTo(map);
+
+  // Fetch all parcel outlines in the current viewport and draw them as a GeoJSON layer
+  async function refreshGridParcels() {
+    if (mapStyle !== 'grid') return;
+    if (map.getZoom() < 15) { gridParcelLayer?.clearLayers(); return; }
+    const b = map.getBounds();
+    const env = `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`;
+    const params = new URLSearchParams({
+      where: '1=1',
+      geometry: env,
+      geometryType: 'esriGeometryEnvelope',
+      inSR: '4326',
+      spatialRel: 'esriSpatialRelIntersects',
+      outFields: '',
+      returnGeometry: 'true',
+      outSR: '4326',
+      f: 'geojson',
+      resultRecordCount: '500',
+    });
+    try {
+      const res = await fetch(`${PARCEL_URL}?${params}`);
+      const geojson = await res.json();
+      if (!gridParcelLayer) {
+        gridParcelLayer = L.geoJSON(null, {
+          style: { color: '#fff', weight: 1, opacity: 0.6, fill: false, interactive: false }
+        }).addTo(map);
+      }
+      gridParcelLayer.clearLayers();
+      if (geojson.features?.length) gridParcelLayer.addData(geojson);
+    } catch { /* silent */ }
+  }
 
   // Map style toggle
   let mapStyle = 'satellite';
   function toggleMapStyle() {
     mapStyle = mapStyle === 'satellite' ? 'grid' : 'satellite';
     const isGrid = mapStyle === 'grid';
-    tileImagery.setOpacity(isGrid ? 0.22 : 1);
-    tileGrid.setOpacity(isGrid ? 1 : 0);
-    tileLabels.setOpacity(isGrid ? 0 : 1);
+    tileImagery.setOpacity(isGrid ? 0.28 : 1);
+    if (isGrid) {
+      refreshGridParcels();
+    } else {
+      gridParcelLayer?.clearLayers();
+    }
     const btn = document.getElementById('mapStyleBtn');
     btn.innerHTML = isGrid
       ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><polyline points="21 15 16 10 5 21"/></svg><span>Satellite</span>`
       : `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Grid view</span>`;
   }
   document.getElementById('mapStyleBtn').addEventListener('click', toggleMapStyle);
+
+  // Refresh parcel grid when map is panned/zoomed in grid mode
+  map.on('moveend zoomend', () => {
+    if (mapStyle !== 'grid') return;
+    clearTimeout(gridRefreshTimer);
+    gridRefreshTimer = setTimeout(refreshGridParcels, 400);
+  });
 
   // Auto-detect location → fly there and populate address if user is in California
   if (navigator.geolocation) {
