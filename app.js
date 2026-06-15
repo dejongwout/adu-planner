@@ -1037,7 +1037,7 @@ function buildModelSelect() {
   map.getPane('floorplanPane').style.pointerEvents = 'none';
 
   // Satellite imagery (Esri — free, no key)
-  L.tileLayer(
+  const tileImagery = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     {
       maxZoom: 23, maxNativeZoom: 20,
@@ -1045,11 +1045,32 @@ function buildModelSelect() {
     }
   ).addTo(map);
 
-  // Labels on top of satellite
-  L.tileLayer(
+  // Light Gray Reference overlay — parcel/lot outlines + labels (used in grid mode)
+  const tileGrid = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 23, maxNativeZoom: 22, opacity: 0 }
+  ).addTo(map);
+
+  // Labels on top of satellite (hidden in grid mode — tileGrid has its own)
+  const tileLabels = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 23, maxNativeZoom: 20 }
   ).addTo(map);
+
+  // Map style toggle
+  let mapStyle = 'satellite';
+  function toggleMapStyle() {
+    mapStyle = mapStyle === 'satellite' ? 'grid' : 'satellite';
+    const isGrid = mapStyle === 'grid';
+    tileImagery.setOpacity(isGrid ? 0.22 : 1);
+    tileGrid.setOpacity(isGrid ? 1 : 0);
+    tileLabels.setOpacity(isGrid ? 0 : 1);
+    const btn = document.getElementById('mapStyleBtn');
+    btn.innerHTML = isGrid
+      ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><polyline points="21 15 16 10 5 21"/></svg><span>Satellite</span>`
+      : `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Grid view</span>`;
+  }
+  document.getElementById('mapStyleBtn').addEventListener('click', toggleMapStyle);
 
   // Auto-detect location → fly there and populate address if user is in California
   if (navigator.geolocation) {

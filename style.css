@@ -655,6 +655,36 @@ select:focus {
 
 .toast.hidden { opacity: 0; }
 
+/* ── Map style toggle (desktop only) ───────────────────────────────────────── */
+.map-style-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.93);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 13px;
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  -webkit-text-fill-color: #1a1a1a;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  transition: background .15s, box-shadow .15s;
+  white-space: nowrap;
+}
+.map-style-btn:hover {
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(0,0,0,.22);
+}
+
 /* ── Carousel + slider (mobile only) ───────────────────────────────────────── */
 .unit-carousel { display: none; }
 .unit-slider   { display: none; }
@@ -768,4 +798,6 @@ select:focus {
 
   .cta-btn { bottom: calc(var(--sheet-h, 300px) + 16px); left: 50%; transform: translateX(-50%); font-size: 0.8125rem; padding: 11px 20px; }
   .cta-btn:hover { transform: translateX(-50%) translateY(-1px); }
+
+  .map-style-btn { display: none; }
 }
